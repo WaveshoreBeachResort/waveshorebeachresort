@@ -1,21 +1,35 @@
 @media(max-width:1024px){}
 
 
-@media(min-width:768px){
+@media(max-width:768px){
 
     .header-wrapper header .mobile_nav {
         display: none;
     }
-    .navbar-expand-md {
-        flex-wrap: nowrap;
-        justify-content: flex-start;
-    }
     .navbar-expand-md .navbar-nav {
-        flex-direction: row;
+        flex-direction: column;
     }
-}
 
-@media(max-width:767px){
+    .menu_open{
+        display: block;
+        z-index: 99;
+        position: fixed;
+        color: #fff;
+        top: 20px;
+        right: 20px;
+    }
+    .menu_open img{
+            background: #fff;
+        width: 37px;
+        border-radius: 4px;
+        padding: 1px;
+    }
+    .header-wrapper header .navbar .nav_wrap{
+        padding: 0 1rem;
+    }
+    #navbarSupportedContent{
+        display: none;
+    }
     .howitworks_wrap .content_wrap,
     .footer_section{
         display: block;
