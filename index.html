@@ -58,14 +58,22 @@
                         </li>
                     </ul>
                 </div> -->
-                <nav class="navbar navbar-expand-md "  id="mobileMenu">
+                <nav class="navbar navbar-expand-md">
                     <div class="nav_wrap">
                         <a class="navbar-brand  " href="/">
                             <div class="header-logos"><img alt="logo" loading="lazy" width="200" decoding="async" data-nimg="1" src="assets/img/waveshore-white.png" style="color: transparent;"></div>
                         </a>
                         <a class=" scroll-hidden back-to-top-link " href="/" style="display: none">
-                            <div class="scroll-logo-wrapper"><img alt="logo" loading="lazy" width="27" height="49" decoding="async" data-nimg="1" src="/_next/static/media/exoticamp-favicon-logo.875c56d9.svg" style="color: transparent;"></div>
+                            <div class="scroll-logo-wrapper">
+                                <img alt="logo" loading="lazy" width="27" height="49" decoding="async"
+                                 data-nimg="1" src="/_next/static/media/exoticamp-favicon-logo.875c56d9.svg" style="color: transparent;">
+                                </div>
                         </a>
+                        <div class="menu_open">
+                            <div id="toggleMenu">
+                                <img src="assets/img/hamburger.png" alt="WaveshoreMenu" />
+                            </div>
+                        </div>
 
                         <div class="navbar-collapse link_wrapper" id="navbarSupportedContent">
                             <div class="close_nav" id="closeMenu">X</div>
@@ -402,7 +410,7 @@ If you are a solo traveller looking to camp you can join any of the camping even
                         </li>
                        
                     </ul>
-                    <img src="assets/img/side.svg"/>
+                    <img src="assets/img/side.svg" class="img-responsive"/>
                 </div>
                 <div class="quick_links">
                     <h4>Quick Links</h4>
@@ -442,6 +450,16 @@ If you are a solo traveller looking to camp you can join any of the camping even
 
     <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
     <script src="assets/js/custom.js"></script>
+    <script>
+
+        $('#toggleMenu').click(function(){
+            $('#navbarSupportedContent').fadeIn();
+        })
+
+        $('#closeMenu').click(function(){
+            $('#navbarSupportedContent').fadeOut();
+        })
+    </script>
 
        
 </body>
