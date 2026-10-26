@@ -1,0 +1,1041 @@
+:root {
+  --deep: #073b4c;
+  --deep2: #052e3b;
+  --sea: #087e8b;
+  --aqua: #42c8c5;
+  --foam: #eafaf6;
+  --sand: #fff4df;
+  --coral: #ff8066;
+  --ink: #163b45;
+  --muted: #627b80;
+  --line: rgba(7, 59, 76, .12);
+  --shadow: 0 18px 55px rgba(7, 59, 76, .12);
+  --radius: 24px
+}
+
+* {
+  box-sizing: border-box
+}
+
+html {
+  scroll-behavior: smooth;
+  scroll-padding-top: 80px
+}
+
+body {
+  margin: 0;
+  color: var(--ink);
+  background: #fff;
+  font-family: "DM Sans", sans-serif;
+  line-height: 1.65
+}
+
+img {
+  display: block;
+  max-width: 100%
+}
+
+a {
+  text-decoration: none;
+  color: inherit
+}
+
+button {
+  font: inherit
+}
+
+.container {
+  width: min(1160px, calc(100% - 40px));
+  margin: auto
+}
+
+.section {
+  padding: 88px 0
+}
+
+.foam {
+  background: var(--foam)
+}
+
+.sand {
+  background: var(--sand)
+}
+
+.eyebrow {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: var(--sea);
+  font-size: .78rem;
+  letter-spacing: .16em;
+  text-transform: uppercase;
+  font-weight: 700
+}
+
+.eyebrow:before {
+  content: "";
+  width: 25px;
+  height: 2px;
+  background: var(--coral)
+}
+
+h1,
+h2,
+h3 {
+  font-family: "Playfair Display", Georgia, serif;
+  line-height: 1.14
+}
+
+h1 {
+  font-size: clamp(3rem, 6.4vw, 5.8rem);
+  letter-spacing: -.04em;
+  margin: 15px 0 20px
+}
+
+h2 {
+  font-size: clamp(2.1rem, 4vw, 3.4rem);
+  margin: 12px 0 20px;
+  letter-spacing: -.025em
+}
+
+h3 {
+  font-size: 1.35rem;
+  margin: 0 0 10px
+}
+
+p {
+  margin-top: 0
+}
+
+.muted {
+  color: var(--muted)
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 10px;
+  padding: 13px 22px;
+  border-radius: 999px;
+  border: 1px solid transparent;
+  font-weight: 700;
+  font-size: .91rem;
+  transition: transform .25s, box-shadow .25s;
+  cursor: pointer
+}
+
+.btn:hover {
+  transform: translateY(-3px);
+  box-shadow: 0 12px 28px #087e8b38
+}
+
+.coral {
+  color: #fff;
+  background: var(--coral)
+}
+
+.light {
+  color: var(--deep);
+  background: white
+}
+
+.outline {
+  border-color: #ffffffb8;
+  color: white;
+  background: transparent
+}
+
+.sea-btn {
+  background: var(--deep);
+  color: white
+}
+
+/* navigation */
+
+.header {
+  position: sticky;
+  top: 0;
+  z-index: 100;
+  background: #052e3bf5;
+  color: white;
+  backdrop-filter: blur(14px);
+  border-bottom: 1px solid #ffffff1a
+}
+
+.nav {
+  min-height: 78px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 22px
+}
+
+.brand {
+  display: inline-flex;
+  align-items: center;
+  gap: 11px;
+  min-width: max-content
+}
+
+.brand-icon {
+  display: grid;
+  place-items: center;
+  width: 43px;
+  height: 43px;
+  border-radius: 50%;
+  color: var(--deep);
+  background: var(--aqua);
+  font-size: 1.5rem;
+  box-shadow: 0 0 0 5px #42c8c51f
+}
+
+.brand-name {
+  display: flex;
+  flex-direction: column;
+  line-height: 1.12
+}
+
+.brand-name strong {
+  font: 600 1.22rem "Playfair Display", Georgia, serif
+}
+
+.brand-name small {
+  margin-top: 4px;
+  color: #a9d9d8;
+  font-size: .63rem;
+  letter-spacing: .18em;
+  text-transform: uppercase
+}
+
+.nav-links {
+  display: flex;
+  align-items: center;
+  gap: clamp(14px, 2vw, 26px)
+}
+
+.nav-links a {
+  color: #e0f2f1;
+  font-size: .88rem;
+  transition: color .2s
+}
+
+.nav-links a:hover,
+.nav-links a.active {
+  color: var(--aqua)
+}
+
+.nav-book {
+  background: var(--coral);
+  color: white;
+  border-radius: 999px;
+  padding: 10px 16px;
+  font-weight: 700;
+  font-size: .85rem;
+  white-space: nowrap
+}
+
+.menu-toggle {
+  display: none;
+  color: white;
+  background: transparent;
+  border: 1px solid #46717b;
+  border-radius: 10px;
+  padding: 7px 11px;
+  font-size: 1.25rem
+}
+
+/* hero */
+
+.hero {
+  position: relative;
+  overflow: hidden;
+  min-height: 650px;
+  color: white;
+  background: var(--deep);
+  isolation: isolate
+}
+
+.hero-bg {
+  position: absolute;
+  inset: 0;
+  z-index: -3;
+  background: linear-gradient(90deg, #03232ee8 0%, #03303ca6 48%, #03303c20 100%), 
+  url("../img/beach-night.jpg") center 48%/cover;
+  animation: zoom 18s ease-in-out infinite alternate
+}
+
+.hero:after {
+  content: "";
+  position: absolute;
+  inset: auto -5% -75px;
+  height: 140px;
+  z-index: -1;
+  background: var(--foam);
+  border-radius: 50% 50% 0 0/34% 34% 0 0;
+  transform: rotate(-1.6deg)
+}
+
+.hero-content {
+  padding: 100px 0 140px;
+  max-width: 740px
+}
+
+.hero-label {
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  color: #d6fffa;
+  border: 1px solid #ffffff4d;
+  border-radius: 999px;
+  padding: 8px 14px;
+  background: #ffffff1a;
+  backdrop-filter: blur(10px);
+  font-size: .82rem
+}
+
+.hero-label span {
+  color: var(--coral)
+}
+
+.hero h1 em {
+  color: var(--aqua);
+  font-style: normal
+}
+
+.hero-copy {
+  max-width: 590px;
+  color: #e0eeee;
+  font-size: 1.08rem;
+  margin-bottom: 30px
+}
+
+.hero-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 13px
+}
+
+.hero-footnote {
+  margin-top: 32px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 22px;
+  color: #e0eeee;
+  font-size: .85rem
+}
+
+.hero-footnote span {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px
+}
+
+.hero-footnote b {
+  color: var(--aqua);
+  font-size: 1.1rem
+}
+
+.floating-shell {
+  position: absolute;
+  right: 8%;
+  bottom: 115px;
+  width: 95px;
+  height: 95px;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: #ffffff1f;
+  border: 1px solid #ffffff47;
+  backdrop-filter: blur(8px);
+  animation: bob 5s ease-in-out infinite
+}
+
+.floating-shell span {
+  font-size: 2.2rem
+}
+.floating-shell2{
+    right: 20%;
+    bottom: 30%;
+
+}
+.floating-shell3{
+    right: 15%;
+    bottom: 30%;
+
+}
+
+/* intro */
+
+.intro-grid {
+  display: grid;
+  grid-template-columns: .95fr 1.05fr;
+  gap: 75px;
+  align-items: center
+}
+
+.photo-stack {
+  position: relative;
+  padding: 0 28px 28px 0
+}
+
+.photo-stack>img {
+  width: 100%;
+  height: 470px;
+  object-fit: cover;
+  border-radius: 46% 46% 22px 22px;
+  box-shadow: var(--shadow)
+}
+
+.photo-stamp {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+  width: 145px;
+  height: 145px;
+  border: 8px solid var(--foam);
+  border-radius: 50%;
+  background: var(--coral);
+  color: white;
+  display: grid;
+  place-items: center;
+  text-align: center;
+  padding: 18px;
+  font: 1.1rem/1.2 "Playfair Display", Georgia, serif;
+  transform: rotate(8deg)
+}
+
+.intro-copy p {
+  color: var(--muted)
+}
+
+.benefits {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 12px;
+  margin: 28px 0
+}
+
+.benefit {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 16px 12px
+}
+
+.benefit span {
+  display: block;
+  font-size: 1.5rem;
+  margin-bottom: 7px
+}
+
+.benefit strong {
+  display: block;
+  font-size: .85rem;
+  line-height: 1.3
+}
+
+/* stays */
+
+.center-heading {
+  max-width: 690px;
+  margin: 0 auto 44px;
+  text-align: center
+}
+
+.center-heading .eyebrow {
+  justify-content: center
+}
+
+.center-heading p {
+  color: var(--muted)
+}
+
+.stay-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 22px
+}
+
+.stay-card {
+  background: white;
+  border-radius: var(--radius);
+  overflow: hidden;
+  box-shadow: 0 12px 40px #073b4c14;
+  transition: transform .3s, box-shadow .3s
+}
+
+.stay-card:hover {
+  transform: translateY(-8px);
+  box-shadow: var(--shadow)
+}
+
+.stay-img {
+  height: 235px;
+  overflow: hidden;
+  position: relative
+}
+
+.stay-img img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .6s
+}
+
+.stay-card:hover .stay-img img {
+  transform: scale(1.07)
+}
+
+.stay-badge {
+  position: absolute;
+  top: 15px;
+  left: 15px;
+  background: var(--sand);
+  color: var(--deep);
+  padding: 7px 11px;
+  border-radius: 999px;
+  font-size: .73rem;
+  font-weight: 700
+}
+
+.stay-content {
+  padding: 25px
+}
+
+.stay-content p {
+  color: var(--muted);
+  font-size: .94rem
+}
+
+.text-link {
+  color: var(--sea);
+  font-weight: 700;
+  font-size: .9rem
+}
+
+/* experience */
+
+.experience {
+  position: relative;
+  overflow: hidden;
+  background: var(--deep);
+  color: white
+}
+
+.experience:before {
+  content: "";
+  position: absolute;
+  width: 440px;
+  height: 440px;
+  border: 1px solid #42c8c533;
+  border-radius: 50%;
+  right: -130px;
+  top: -170px;
+  box-shadow: 0 0 0 35px #42c8c509, 0 0 0 75px #42c8c506
+}
+
+.experience-grid {
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 65px;
+  align-items: center;
+  position: relative
+}
+
+.experience h2 {
+  color: white
+}
+
+.experience p {
+  color: #c2d9dc
+}
+
+.experience .eyebrow {
+  color: var(--aqua)
+}
+
+.experience-list {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 15px
+}
+
+.experience-item {
+  padding: 23px;
+  border: 1px solid #ffffff24;
+  border-radius: 18px;
+  background: #ffffff0e
+}
+
+.experience-item .symbol {
+  font-size: 1.7rem;
+  margin-bottom: 14px
+}
+
+.experience-item h3 {
+  color: white;
+  font-size: 1.18rem
+}
+
+.experience-item p {
+  font-size: .88rem;
+  margin-bottom: 0
+}
+
+/* gallery */
+
+.gallery-grid {
+  display: grid;
+  grid-template-columns: 1.15fr .85fr .85fr;
+  grid-template-rows: 210px 210px;
+  gap: 16px
+}
+
+.gallery-item {
+  overflow: hidden;
+  border-radius: 18px;
+  position: relative;
+  background: #dcefed
+}
+
+.gallery-item:first-child {
+  grid-row: span 2
+}
+
+.gallery-item img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  transition: transform .6s
+}
+
+.gallery-item:hover img {
+  transform: scale(1.08)
+}
+
+.gallery-item:after {
+  content: "";
+  position: absolute;
+  inset: 45% 0 0;
+  background: linear-gradient(transparent, #042a3480)
+}
+
+.gallery-caption {
+  position: absolute;
+  z-index: 1;
+  bottom: 16px;
+  left: 18px;
+  color: white;
+  font: 1.1rem "Playfair Display", Georgia, serif
+}
+
+/* destinations and FAQ */
+
+.destinations {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 13px
+}
+
+.destination {
+  background: white;
+  border: 1px solid var(--line);
+  border-radius: 16px;
+  padding: 20px 14px;
+  text-align: center;
+  transition: transform .25s, border-color .25s
+}
+
+.destination:hover {
+  transform: translateY(-5px);
+  border-color: var(--aqua)
+}
+
+.destination span {
+  display: block;
+  font-size: 1.7rem;
+  margin-bottom: 10px
+}
+
+.destination strong {
+  font-size: .9rem;
+  display: block
+}
+
+.destination small {
+  display: block;
+  color: var(--muted);
+  margin-top: 5px;
+  font-size: .75rem
+}
+
+.faq-grid {
+  display: grid;
+  grid-template-columns: .8fr 1.2fr;
+  gap: 60px
+}
+
+.faq-list details {
+  border-bottom: 1px solid var(--line);
+  padding: 19px 0
+}
+
+.faq-list summary {
+  list-style: none;
+  cursor: pointer;
+  font-weight: 700;
+  display: flex;
+  justify-content: space-between;
+  gap: 20px
+}
+
+.faq-list summary::-webkit-details-marker {
+  display: none
+}
+
+.faq-list summary:after {
+  content: "+";
+  color: var(--sea);
+  font-size: 1.4rem
+}
+
+.faq-list details[open] summary:after {
+  content: "−"
+}
+
+.faq-list details p {
+  color: var(--muted);
+  margin: 12px 0 0
+}
+
+/* CTA footer */
+
+.cta {
+  padding: 76px 0;
+  background: linear-gradient(120deg, #087e8b, #075365);
+  color: white;
+  position: relative;
+  overflow: hidden
+}
+
+.cta:after {
+  content: "〰";
+  position: absolute;
+  right: 7%;
+  top: -70px;
+  font-size: 18rem;
+  line-height: 1;
+  color: #ffffff0f;
+  transform: rotate(-20deg)
+}
+
+.cta-inner {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 30px
+}
+
+.cta h2 {
+  margin-bottom: 10px
+}
+
+.cta p {
+  color: #d4f2f0;
+  margin: 0
+}
+
+footer {
+  background: #042c38;
+  color: #b7d1d4;
+  padding: 38px 0 22px
+}
+
+.footer-grid {
+  display: grid;
+  grid-template-columns: 1.3fr .8fr .9fr;
+  gap: 40px;
+  padding-bottom: 30px
+}
+
+footer h3 {
+  color: white;
+  font-size: 1.15rem
+}
+
+footer p,
+footer a {
+  color: #b7d1d4;
+  font-size: .88rem
+}
+
+.footer-links {
+  display: grid;
+  gap: 8px
+}
+
+.footer-links a:hover {
+  color: var(--aqua)
+}
+
+.footer-bottom {
+  display: flex;
+  justify-content: space-between;
+  gap: 20px;
+  border-top: 1px solid #ffffff1f;
+  padding-top: 20px;
+  font-size: .78rem
+}
+
+.whatsapp {
+  position: fixed;
+  z-index: 90;
+  right: 22px;
+  bottom: 22px;
+  width: 58px;
+  height: 58px;
+  display: grid;
+  place-items: center;
+  border-radius: 50%;
+  color: white;
+  background: #20bd70;
+  box-shadow: 0 10px 30px #0003;
+  font-size: 1.5rem;
+  transition: transform .2s
+}
+
+.whatsapp:hover {
+  transform: translateY(-4px) scale(1.04)
+}
+
+.reveal {
+  opacity: 0;
+  transform: translateY(24px);
+  transition: opacity .7s ease, transform .7s ease
+}
+
+.reveal.visible {
+  opacity: 1;
+  transform: translateY(0)
+}
+
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0) rotate(-4deg)
+  }
+  50% {
+    transform: translateY(-14px) rotate(5deg)
+  }
+}
+
+@keyframes zoom {
+  from {
+    transform: scale(1.04)
+  }
+  to {
+    transform: scale(1.12)
+  }
+}
+
+@media(prefers-reduced-motion:reduce) {
+  *,
+  *:before,
+  *:after {
+    scroll-behavior: auto !important;
+    animation-duration: .01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: .01ms !important
+  }
+  .reveal {
+    opacity: 1;
+    transform: none
+  }
+}
+
+@media(max-width:1000px) {
+  .nav-links {
+    gap: 14px
+  }
+  .nav-links a {
+    font-size: .82rem
+  }
+  .intro-grid,
+  .experience-grid,
+  .faq-grid {
+    gap: 38px
+  }
+  .destinations {
+    grid-template-columns: repeat(3, 1fr)
+  }
+  .floating-shell {
+    right: 4%
+  }
+}
+
+@media(max-width:760px) {
+  .container {
+    width: min(100% - 32px, 560px)
+  }
+  .section {
+    padding: 66px 0
+  }
+  .nav {
+    min-height: 70px
+  }
+  .menu-toggle {
+    display: block
+  }
+  .nav-book {
+    display: none
+  }
+  .nav-links {
+    display: none;
+    position: absolute;
+    left: 0;
+    right: 0;
+    top: 70px;
+    padding: 18px 24px 24px;
+    background: var(--deep2);
+    flex-direction: column;
+    align-items: flex-start;
+    border-top: 1px solid #ffffff1a
+  }
+  .nav-links.open {
+    display: flex
+  }
+  .nav-links a {
+    padding: 6px 0;
+    font-size: .95rem
+  }
+  .hero {
+    min-height: auto
+  }
+  .hero-bg {
+    background-position: 60% center
+  }
+  .hero-content {
+    padding: 80px 0 140px
+  }
+  .hero-copy {
+    font-size: 1rem
+  }
+  .floating-shell {
+    width: 64px;
+    height: 64px;
+    right: 8%;
+    bottom: 62px
+  }
+  .floating-shell span {
+    font-size: 1.6rem
+  }
+  .intro-grid,
+  .experience-grid,
+  .faq-grid {
+    grid-template-columns: 1fr
+  }
+  .photo-stack {
+    max-width: 480px
+  }
+  .photo-stack>img {
+    height: 390px
+  }
+  .stay-grid {
+    grid-template-columns: 1fr
+  }
+  .stay-card {
+    display: grid;
+    grid-template-columns: .9fr 1.1fr
+  }
+  .stay-img {
+    height: 100%;
+    min-height: 230px
+  }
+  .experience-list {
+    gap: 10px
+  }
+  .gallery-grid {
+    grid-template-columns: 1fr 1fr;
+    grid-template-rows: 230px 160px 160px
+  }
+  .gallery-item:first-child {
+    grid-column: span 2;
+    grid-row: auto
+  }
+  .cta-inner {
+    align-items: flex-start;
+    flex-direction: column
+  }
+  .footer-grid {
+    grid-template-columns: 1fr 1fr
+  }
+  .footer-grid>div:first-child {
+    grid-column: span 2
+  }
+}
+
+@media(max-width:460px) {
+  .brand-name strong {
+    font-size: 1.05rem
+  }
+  .brand-icon {
+    width: 38px;
+    height: 38px
+  }
+  .hero h1 {
+    font-size: 3rem
+  }
+  .hero-actions .btn {
+    width: 100%
+  }
+  .hero-footnote {
+    gap: 12px;
+    flex-direction: column
+  }
+  .benefits {
+    grid-template-columns: 1fr
+  }
+  .benefit {
+    display: flex;
+    align-items: center;
+    gap: 12px
+  }
+  .benefit span {
+    margin: 0
+  }
+  .stay-card {
+    display: block
+  }
+  .stay-img {
+    height: 220px
+  }
+  .experience-list {
+    grid-template-columns: 1fr
+  }
+  .gallery-grid {
+    grid-template-rows: 210px 150px 150px;
+    gap: 10px
+  }
+  .destinations {
+    grid-template-columns: repeat(2, 1fr)
+  }
+  .footer-grid {
+    grid-template-columns: 1fr;
+    gap: 25px
+  }
+  .footer-grid>div:first-child {
+    grid-column: auto
+  }
+  .footer-bottom {
+    flex-direction: column
+  }
+  .whatsapp {
+    right: 14px;
+    bottom: 14px;
+    width: 52px;
+    height: 52px
+  }
+}
