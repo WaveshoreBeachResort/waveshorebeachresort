@@ -1,0 +1,1407 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Waveshore Billing</title>
+<style>
+  :root {
+    --primary: #133b5c; --primary-dark: #0f2c45; --accent: #d4a353;
+    --bg: #f5f7fa; --card: #ffffff; --text: #1e293b; --text-muted: #64748b;
+    --border: #e2e8f0; --success: #16a34a; --danger: #dc2626;
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; -webkit-tap-highlight-color: transparent; }
+  body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg); color: var(--text); min-height: 100vh; padding-bottom: 80px; }
+  header { background: var(--primary); color: white; padding: 12px 16px; display: flex;
+    align-items: center; gap: 8px; position: sticky; top: 0; z-index: 100;
+    box-shadow: 0 2px 8px rgba(0,0,0,.15); }
+  header h1 { font-size: 16px; flex: 1; margin-left: 8px; font-weight: 600; }
+  .header-logo { height: 36px; width: 36px; border-radius: 50%; background: white;
+    object-fit: contain; padding: 4px; display: inline-block; }
+  .icon-btn { background: rgba(255,255,255,.2); border: none; color: white;
+    padding: 8px 11px; border-radius: 8px; font-size: 17px; cursor: pointer; }
+  .icon-btn:hover { background: rgba(255,255,255,.35); }
+  .container { max-width: 900px; margin: 0 auto; padding: 16px; }
+  .card { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 12px;
+    box-shadow: 0 1px 3px rgba(0,0,0,.08); border: 1px solid var(--border); }
+  .brand-header { display: flex; flex-direction: column; align-items: center; justify-content: center;
+    text-align: center; margin-bottom: 20px; padding: 10px; }
+  .brand-logo { width: 120px; height: 120px; margin-bottom: 8px; }
+  .brand-name { font-size: 22px; font-weight: 700; color: var(--primary); letter-spacing: 1px; }
+  .brand-sub { font-size: 12px; color: var(--accent); font-weight: 600; letter-spacing: 2px; text-transform: uppercase; margin-top: 4px; }
+  .room-card { cursor: pointer; display: flex; align-items: center; gap: 12px; transition: .15s; }
+  .room-card:hover { transform: translateY(-2px); box-shadow: 0 4px 12px rgba(0,0,0,.1); }
+  .room-info { flex: 1; }
+  .room-name { font-size: 17px; font-weight: 600; margin-bottom: 2px; }
+  .room-meta { font-size: 13px; color: var(--text-muted); }
+  .badge { display: inline-block; padding: 2px 8px; border-radius: 20px; font-size: 11px; font-weight: 600; }
+  .badge-occupied { background: #e0e7ff; color: var(--primary); }
+  .badge-free { background: #e5e7eb; color: #6b7280; }
+  .badge-customer { background: #dcfce7; color: #15803d; }
+  .badge-rent { background: #fef3c7; color: #92400e; }
+  .btn { padding: 10px 16px; border: none; border-radius: 8px; font-size: 14px; font-weight: 600; cursor: pointer; }
+  .btn-primary { background: var(--primary); color: white; }
+  .btn-primary:hover { background: var(--primary-dark); }
+  .btn-primary:disabled { background: #94a3b8; cursor: not-allowed; }
+  .btn-danger { background: var(--danger); color: white; }
+  .btn-success { background: var(--success); color: white; }
+  .btn-whatsapp { background: #25D366; color: white; }
+  .btn-whatsapp:hover { background: #1da851; }
+  .btn-secondary { background: var(--border); color: var(--text); }
+  .btn-sm { padding: 6px 10px; font-size: 13px; }
+  .fab { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%;
+    background: var(--accent); color: white; border: none; font-size: 28px;
+    box-shadow: 0 4px 12px rgba(212, 163, 83, .4); cursor: pointer; z-index: 90; }
+  .fab:hover { background: #c28d3d; }
+  .modal-backdrop { position: fixed; inset: 0; background: rgba(0,0,0,.5); display: none;
+    align-items: center; justify-content: center; z-index: 200; padding: 16px; }
+  .modal-backdrop.show { display: flex; }
+  .modal { background: white; border-radius: 16px; padding: 20px; width: 100%; max-width: 500px;
+    max-height: 90vh; overflow-y: auto; }
+  .modal h2 { font-size: 18px; margin-bottom: 16px; color: var(--primary); }
+  .form-group { margin-bottom: 12px; }
+  .form-group label { display: block; font-size: 13px; font-weight: 600; margin-bottom: 6px; color: var(--text-muted); }
+  .form-group input, .form-group select, .form-group textarea {
+    width: 100%; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px;
+    font-size: 15px; font-family: inherit; outline: none; }
+  .form-group input:focus, .form-group select:focus, .form-group textarea:focus {
+    border-color: var(--primary); box-shadow: 0 0 0 3px rgba(19, 59, 92, .15); }
+  .row { display: flex; gap: 8px; } .row > * { flex: 1; }
+  .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
+  .item-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
+  .item-row:last-child { border-bottom: none; }
+  .item-info { flex: 1; }
+  .item-name { font-weight: 600; font-size: 15px; }
+  .item-detail { font-size: 13px; color: var(--text-muted); }
+  .item-total { font-weight: 700; }
+  .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 15px; }
+  .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+  .chip { padding: 6px 12px; background: var(--bg); border: 1px solid var(--border);
+    border-radius: 20px; font-size: 13px; cursor: pointer; font-weight: 500; }
+  .chip:hover { background: var(--primary); color: white; border-color: var(--primary); }
+  .cat-chip { background: #e0e7ff; border-color: #c7d2fe; color: var(--primary); }
+  .cat-chip:hover { background: var(--primary); color: white; }
+  .summary-row { display: flex; justify-content: space-between; padding: 4px 0; font-size: 14px; }
+  .summary-total { display: flex; justify-content: space-between; padding: 10px 0;
+    border-top: 2px solid var(--text); margin-top: 8px; font-size: 18px; font-weight: 700; color: var(--primary); }
+  .tab-bar { display: flex; gap: 6px; margin-bottom: 12px; overflow-x: auto; }
+  .tab { padding: 8px 14px; background: var(--card); border: 1px solid var(--border);
+    border-radius: 20px; font-size: 13px; cursor: pointer; font-weight: 600; white-space: nowrap; color: var(--text-muted); }
+  .tab.active { background: var(--primary); color: white; border-color: var(--primary); }
+  .stat-box { background: var(--card); border-radius: 12px; padding: 16px; margin-bottom: 12px; border: 1px solid var(--border); }
+  .stat-label { font-size: 12px; color: var(--text-muted); text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-size: 28px; font-weight: 700; margin-top: 4px; color: var(--primary); }
+  .stat-sub { font-size: 13px; color: var(--text-muted); margin-top: 4px; }
+  .flex-space { display: flex; justify-content: space-between; align-items: center; }
+  .mt { margin-top: 12px; }
+  .toast { position: fixed; bottom: 100px; left: 50%; transform: translateX(-50%);
+    background: #1e293b; color: white; padding: 10px 20px; border-radius: 8px;
+    font-size: 14px; z-index: 999; opacity: 0; transition: opacity .3s; pointer-events: none;
+    max-width: 90%; text-align: center; }
+  .toast.show { opacity: 1; }
+  .photo-upload { border: 2px dashed var(--border); border-radius: 12px; padding: 24px 16px;
+    text-align: center; cursor: pointer; background: var(--bg); color: var(--text-muted); }
+  .photo-upload:hover { border-color: var(--primary); background: #eff6ff; color: var(--primary); }
+  .photo-upload .icon { font-size: 32px; margin-bottom: 8px; }
+  .photo-upload .label { font-weight: 600; font-size: 14px; }
+  .photo-upload .hint { font-size: 12px; margin-top: 4px; }
+  .photo-preview { position: relative; border-radius: 12px; overflow: hidden; border: 1px solid var(--border); background: #000; }
+  .photo-preview img { width: 100%; display: block; max-height: 260px; object-fit: contain; }
+  .photo-preview .remove-btn { position: absolute; top: 8px; right: 8px; background: rgba(220,38,38,.9);
+    color: white; border: none; padding: 6px 10px; border-radius: 6px; font-size: 13px; cursor: pointer; font-weight: 600; }
+  .ocr-status { padding: 10px; border-radius: 8px; font-size: 13px; margin-top: 8px; text-align: center; font-weight: 600; }
+  .ocr-status.loading { background: #fef3c7; color: #92400e; }
+  .ocr-status.success { background: #dcfce7; color: #166534; }
+  .ocr-status.error { background: #fee2e2; color: #991b1b; }
+  .progress { width: 100%; height: 6px; background: var(--border); border-radius: 3px; overflow: hidden; margin-top: 8px; }
+  .progress-bar { height: 100%; background: var(--accent); width: 0%; transition: width .2s; }
+  .export-btn-row { display: flex; gap: 8px; flex-wrap: wrap; margin-top: 12px; }
+  .cat-block { margin-bottom: 14px; padding-bottom: 10px; border-bottom: 1px dashed var(--border); }
+  .cat-block:last-of-type { border-bottom: none; }
+  .cat-header { font-weight: 700; font-size: 14px; color: var(--primary);
+    background: #eef2f7; padding: 6px 10px; border-radius: 6px; margin-bottom: 6px; }
+  .cat-subtotal { display: flex; justify-content: space-between; font-size: 13px; font-weight: 700;
+    color: var(--primary); border-top: 1px solid var(--border); padding-top: 6px; margin-top: 6px; }
+  .cat-line { display: flex; justify-content: space-between; padding: 3px 4px; font-size: 14px; }
+  .info-box { background: #eff6ff; border: 1px solid #bfdbfe; color: #1e40af;
+    padding: 10px 12px; border-radius: 8px; font-size: 12.5px; margin-bottom: 10px; line-height: 1.55; }
+  .wa-btn-group { display: flex; flex-direction: column; gap: 8px; margin-top: 12px; }
+  .wa-btn-group .btn { width: 100%; text-align: left; padding: 12px 16px; }
+  .wa-btn-group .btn small { display: block; font-weight: 400; opacity: 0.9; font-size: 11px; margin-top: 2px; line-height: 1.4; }
+  .bill-preview-box { text-align: center; margin-top: 12px; }
+  .bill-preview-box img { max-width: 100%; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+  @media print {
+    body * { visibility: hidden; }
+    #billPrintArea, #billPrintArea * { visibility: visible; }
+    #billPrintArea { position: absolute; left: 0; top: 0; width: 100%; padding: 20px; background: white; display: block !important; }
+    .no-print { display: none !important; }
+    .print-logo { width: 90px; height: 90px; margin-bottom: 5px; }
+    .print-header { text-align: center; margin-bottom: 10px; }
+    .print-header h2 { margin: 0; font-size: 18px; color: #000; }
+    .print-header p { margin: 2px 0; font-size: 12px; }
+    .print-dashed { border-top: 1px dashed #000; margin: 8px 0; }
+    .print-cat-header { font-weight: bold; font-size: 13px; margin: 8px 0 4px; background: #f0f0f0; padding: 4px 6px; }
+    .print-cat-table { width: 100%; border-collapse: collapse; font-size: 12px; }
+    .print-cat-table td { padding: 2px 4px; }
+    .print-subtotal td { font-weight: bold; border-top: 1px solid #000; padding-top: 4px; }
+  }
+</style>
+</head>
+<body>
+
+<header>
+  <button class="icon-btn" id="backBtn" style="display:none" onclick="showScreen('home')">←</button>
+  <span id="headerLogo" class="header-logo"></span>
+  <h1 id="headerTitle">Waveshore Beach Resort</h1>
+  <button class="icon-btn" title="Reports" onclick="showScreen('reports')">📊</button>
+  <button class="icon-btn" title="Backup" onclick="openBackupModal()">💾</button>
+  <button class="icon-btn" title="Settings" onclick="openSettingsModal()">⚙️</button>
+</header>
+
+<main class="container" id="mainContent"></main>
+<button class="fab" id="fab" onclick="handleFab()">+</button>
+
+<div class="modal-backdrop" id="modalBackdrop" onclick="if(event.target===this)closeModal()">
+  <div class="modal" id="modalContent"></div>
+</div>
+
+<div class="toast" id="toast"></div>
+<div id="billPrintArea" style="display:none"></div>
+
+<input type="file" id="idPhotoCamera" accept="image/*" capture="environment" style="display:none" onchange="handleIdPhoto(event)" />
+<input type="file" id="idPhotoGallery" accept="image/*" style="display:none" onchange="handleIdPhoto(event)" />
+
+<script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+
+<script>
+// ═══════════════════ WAVES LOGO ═══════════════════
+const WAVES_LOGO_SVG = `
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 200 200" role="img" aria-label="Waveshore logo">
+  <defs>
+    <linearGradient id="waveGrad" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#133b5c"/>
+      <stop offset="100%" stop-color="#1e5a8a"/>
+    </linearGradient>
+    <linearGradient id="goldGrad" x1="0" y1="0" x2="1" y2="0">
+      <stop offset="0%" stop-color="#d4a353"/>
+      <stop offset="100%" stop-color="#f0c987"/>
+    </linearGradient>
+  </defs>
+  <circle cx="100" cy="100" r="96" fill="url(#waveGrad)"/>
+  <circle cx="100" cy="100" r="96" fill="none" stroke="url(#goldGrad)" stroke-width="4"/>
+  <circle cx="100" cy="78" r="18" fill="url(#goldGrad)"/>
+  <path d="M10 120 C 40 100, 60 140, 90 120 S 150 100, 190 120"
+        fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.95"/>
+  <path d="M10 138 C 40 118, 60 158, 90 138 S 150 118, 190 138"
+        fill="none" stroke="#ffffff" stroke-width="6" stroke-linecap="round" opacity="0.75"/>
+  <path d="M10 156 C 40 136, 60 176, 90 156 S 150 136, 190 156"
+        fill="none" stroke="#d4a353" stroke-width="6" stroke-linecap="round" opacity="0.9"/>
+</svg>`;
+const APP_LOGO = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(WAVES_LOGO_SVG);
+
+// ═══════════════════ MENU ═══════════════════
+const MENU_ITEMS = [
+  { name: "AC Room (1 Night)",      price: 2500, category: "Room Rent" },
+  { name: "Non-AC Room (1 Night)",  price: 1500, category: "Room Rent" },
+  { name: "Deluxe Suite (1 Night)", price: 4500, category: "Room Rent" },
+  { name: "Extra Bed",              price: 500,  category: "Room Rent" },
+  { name: "Early Check-in",         price: 300,  category: "Room Rent" },
+  { name: "Late Check-out",         price: 300,  category: "Room Rent" },
+  { name: "Tea",             price: 15,  category: "Drinks" },
+  { name: "Coffee",          price: 25,  category: "Drinks" },
+  { name: "Water",           price: 20,  category: "Drinks" },
+  { name: "Soft Drink",      price: 40,  category: "Drinks" },
+  { name: "Beer",            price: 180, category: "Drinks" },
+  { name: "Veg Thali",       price: 150, category: "Food"   },
+  { name: "Chicken Biryani", price: 220, category: "Food"   },
+  { name: "Paneer Curry",    price: 180, category: "Food"   },
+  { name: "Sandwich",        price: 80,  category: "Snacks" },
+  { name: "Samosa",          price: 25,  category: "Snacks" },
+  { name: "Chips",           price: 30,  category: "Snacks" },
+];
+const DEFAULT_TAX_PERCENT = 5;
+const BUSINESS_NAME = "Waveshore Beach Resort";
+
+const CATEGORY_ICON = { 'Room Rent': '🏠', 'Food': '🍽', 'Drinks': '🥤', 'Snacks': '🍟' };
+const CATEGORY_ORDER = ['Room Rent', 'Food', 'Drinks', 'Snacks'];
+
+let db = {
+  rooms: [], orders: [], customers: {},
+  settings: { businessName: BUSINESS_NAME, taxPercent: DEFAULT_TAX_PERCENT }
+};
+let currentScreen = 'home';
+let currentRoomId = null;
+let currentPhotoData = null;
+window._reportRange = window._reportRange || 'today';
+
+// ─────────── persistence ───────────
+function loadDB() {
+  try {
+    const raw = localStorage.getItem('roombilling');
+    if (raw) db = JSON.parse(raw);
+  } catch (e) { console.error("Load error", e); }
+  db.settings = db.settings || { businessName: BUSINESS_NAME, taxPercent: DEFAULT_TAX_PERCENT };
+  db.rooms = db.rooms || [];
+  db.orders = db.orders || [];
+  db.customers = db.customers || {};
+  const headerSpan = document.getElementById('headerLogo');
+  if (headerSpan) headerSpan.innerHTML = `<img src="${APP_LOGO}" alt="Logo" style="height:100%;width:100%;object-fit:contain;">`;
+}
+function saveDB() { localStorage.setItem('roombilling', JSON.stringify(db)); }
+
+// ─────────── helpers ───────────
+function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function money(n) { return '₹' + (Math.round(n * 100) / 100).toFixed(2); }
+function esc(s) { return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function toast(msg) {
+  const t = document.getElementById('toast');
+  t.textContent = msg; t.classList.add('show');
+  clearTimeout(t._tid); t._tid = setTimeout(() => t.classList.remove('show'), 2500);
+}
+function fmtDate(ts) {
+  const d = new Date(ts);
+  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'});
+}
+function ymd(ts) {
+  const d = new Date(ts);
+  const y = d.getFullYear();
+  const m = String(d.getMonth() + 1).padStart(2, '0');
+  const day = String(d.getDate()).padStart(2, '0');
+  return `${y}-${m}-${day}`;
+}
+function computeBill(room, orders) {
+  const subtotal = orders.reduce((s, o) => s + o.price * o.quantity, 0);
+  const discountAmount = room.discountIsPercent ? subtotal * (room.discountValue || 0) / 100 : (room.discountValue || 0);
+  const afterDiscount = Math.max(0, subtotal - discountAmount);
+  const taxAmount = afterDiscount * (room.taxPercent || 0) / 100;
+  return { subtotal, discountAmount, taxAmount, grandTotal: afterDiscount + taxAmount };
+}
+function groupOrdersByCategory(orders) {
+  const groups = {};
+  orders.forEach(o => {
+    const cat = o.category || 'Other';
+    if (!groups[cat]) groups[cat] = { items: [], subtotal: 0 };
+    groups[cat].items.push(o);
+    groups[cat].subtotal += o.price * o.quantity;
+  });
+  const known = CATEGORY_ORDER.filter(c => groups[c]);
+  const others = Object.keys(groups).filter(c => !CATEGORY_ORDER.includes(c));
+  return [...known, ...others].map(cat => ({
+    category: cat, icon: CATEGORY_ICON[cat] || '📦',
+    items: groups[cat].items, subtotal: groups[cat].subtotal
+  }));
+}
+function normalizePhone(raw) {
+  let p = String(raw || '').replace(/\D/g, '');
+  if (!p) return '';
+  if (p.length === 10) return '91' + p;
+  if (p.length === 11 && p.startsWith('0')) return '91' + p.slice(1);
+  if (p.length === 12 && p.startsWith('91')) return p;
+  return p;
+}
+function ensureCustomerPhone(roomId) {
+  const cust = db.customers[roomId];
+  if (cust && cust.phone) return normalizePhone(cust.phone);
+  const entered = prompt('Enter customer WhatsApp number (10-digit, without country code):');
+  if (!entered) return '';
+  const digits = entered.replace(/\D/g, '');
+  if (!digits) { toast('Invalid number'); return ''; }
+  if (!db.customers[roomId]) db.customers[roomId] = {};
+  db.customers[roomId].phone = digits;
+  saveDB();
+  return normalizePhone(digits);
+}
+
+// ─────────── navigation ───────────
+function showScreen(screen, roomId) {
+  currentScreen = screen;
+  currentRoomId = roomId || null;
+  document.getElementById('backBtn').style.display = (screen === 'home') ? 'none' : 'inline-block';
+  document.getElementById('fab').style.display = (screen === 'home' || screen === 'room') ? 'block' : 'none';
+  render();
+}
+function handleFab() {
+  if (currentScreen === 'home') openAddRoomModal();
+  else if (currentScreen === 'room') openAddItemModal();
+}
+function render() {
+  const m = document.getElementById('mainContent');
+  const title = document.getElementById('headerTitle');
+  if (currentScreen === 'home') { title.textContent = 'Home'; m.innerHTML = renderHome(); }
+  else if (currentScreen === 'room') {
+    const r = db.rooms.find(x => x.id === currentRoomId);
+    title.textContent = r ? r.name : 'Room';
+    m.innerHTML = renderRoom();
+  } else if (currentScreen === 'reports') { title.textContent = 'Reports'; m.innerHTML = renderReports(); }
+}
+
+// ─────────── home ───────────
+function renderHome() {
+  const brandHtml = `
+    <div class="brand-header">
+      <img src="${APP_LOGO}" class="brand-logo" alt="Waveshore logo">
+      <div class="brand-name">Waveshore</div>
+      <div class="brand-sub">The Beach Resort</div>
+    </div>`;
+  if (db.rooms.length === 0) return `${brandHtml}<div class="empty">No rooms yet.<br>Tap + to add.</div>`;
+  return brandHtml + db.rooms.map(r => {
+    const activeOrders = db.orders.filter(o => o.roomId === r.id && !o.paid);
+    const total = computeBill(r, activeOrders).grandTotal;
+    const customer = db.customers[r.id];
+    const hasRent = activeOrders.some(o => o.category === "Room Rent");
+    return `<div class="card room-card" onclick="showScreen('room', '${r.id}')">
+        <div class="room-info">
+          <div class="room-name">${esc(r.name)}</div>
+          <div class="room-meta">
+            <span class="badge ${r.isOccupied ? 'badge-occupied' : 'badge-free'}">${r.isOccupied ? 'OCCUPIED' : 'FREE'}</span>
+            ${hasRent ? ` <span class="badge badge-rent">🏠 Rent</span>` : ''}
+            ${customer ? ` <span class="badge badge-customer">👤 ${esc(customer.name || 'Customer')}</span>` : ''}
+            ${activeOrders.length > 0 ? ` &nbsp; ${activeOrders.length} items &nbsp; ${money(total)}` : ''}
+          </div>
+        </div>
+        <button class="icon-btn" style="background:#fef2f2;color:var(--danger)"
+          onclick="event.stopPropagation(); deleteRoom('${r.id}')">🗑</button>
+      </div>`;
+  }).join('');
+}
+
+// ─────────── room ───────────
+function renderRoom() {
+  const room = db.rooms.find(r => r.id === currentRoomId);
+  if (!room) { showScreen('home'); return ''; }
+  const orders = db.orders.filter(o => o.roomId === room.id && !o.paid);
+  const bill = computeBill(room, orders);
+  const customer = db.customers[room.id];
+  const customerCard = customer ? `
+    <div class="card">
+      <div class="flex-space">
+        <div style="font-weight:600;font-size:15px">👤 ${esc(customer.name || 'Customer')}</div>
+        <button class="btn btn-secondary btn-sm" onclick="openCustomerScreen()">Edit</button>
+      </div>
+      <div style="font-size:13px;color:var(--text-muted);margin-top:6px">
+        ${customer.idType ? `${esc(customer.idType)}: ${esc(customer.idNumber || '')}<br>` : ''}
+        ${customer.phone ? `📞 ${esc(customer.phone)}<br>` : ''}
+        ${customer.dob ? `🎂 ${esc(customer.dob)}<br>` : ''}
+        ${customer.gender ? `⚧ ${esc(customer.gender)}<br>` : ''}
+        ${customer.address ? `🏠 ${esc(customer.address)}` : ''}
+      </div>
+      ${customer.photo ? `<img src="${customer.photo}" style="width:100%;max-height:160px;object-fit:contain;margin-top:8px;border-radius:8px;border:1px solid var(--border)" />` : ''}
+    </div>` : `
+    <div class="card" style="border:2px dashed var(--border)">
+      <div class="flex-space">
+        <div>
+          <div style="font-weight:600">🆔 Customer ID</div>
+          <div style="font-size:12px;color:var(--text-muted)">Photo → auto-extracts details</div>
+        </div>
+        <button class="btn btn-primary btn-sm" onclick="openCustomerScreen()">+ Capture</button>
+      </div>
+    </div>`;
+
+  const itemsHtml = orders.length === 0
+    ? `<div class="empty">No items yet. Tap + to add.</div>`
+    : orders.map(o => {
+        const isRent = o.category === "Room Rent";
+        return `
+        <div class="item-row">
+          <div class="item-info">
+            <div class="item-name">
+              ${isRent ? '🏠 ' : ''}${esc(o.itemName)}
+              <span class="badge ${isRent ? 'badge-rent' : 'badge-free'}">${esc(o.category)}</span>
+            </div>
+            <div class="item-detail">${money(o.price)} × ${o.quantity}</div>
+          </div>
+          <div class="item-total">${money(o.price * o.quantity)}</div>
+          <button class="icon-btn btn-sm" style="background:#fef2f2;color:var(--danger)"
+            onclick="deleteOrder('${o.id}')">🗑</button>
+        </div>`;
+      }).join('');
+
+  return `
+    ${customerCard}
+    <div class="card">
+      <div class="flex-space">
+        <div><div style="font-size:13px;color:var(--text-muted)">Tax</div><div style="font-weight:600">${room.taxPercent}%</div></div>
+        <div><div style="font-size:13px;color:var(--text-muted)">Discount</div><div style="font-weight:600">${room.discountValue > 0 ? (room.discountIsPercent ? room.discountValue + '%' : money(room.discountValue)) : 'None'}</div></div>
+        <button class="btn btn-secondary btn-sm" onclick="openRoomSettingsModal()">Edit</button>
+      </div>
+    </div>
+    <div class="card">${itemsHtml}</div>
+    <div class="card">
+      <div class="summary-row"><span>Subtotal</span><span>${money(bill.subtotal)}</span></div>
+      ${bill.discountAmount > 0 ? `<div class="summary-row" style="color:var(--success)"><span>Discount</span><span>-${money(bill.discountAmount)}</span></div>` : ''}
+      ${bill.taxAmount > 0 ? `<div class="summary-row"><span>Tax (${room.taxPercent}%)</span><span>${money(bill.taxAmount)}</span></div>` : ''}
+      <div class="summary-total"><span>TOTAL</span><span>${money(bill.grandTotal)}</span></div>
+      <div class="modal-actions mt">
+        <button class="btn btn-primary" ${orders.length === 0 ? 'disabled' : ''} onclick="openBillModal()">🧾 Generate Bill</button>
+      </div>
+    </div>`;
+}
+
+// ─────────── reports ───────────
+function getReportRange() {
+  const range = window._reportRange || 'today';
+  const now = new Date();
+  let from = new Date();
+  if (range === 'today') from.setHours(0,0,0,0);
+  else if (range === 'week') from.setDate(now.getDate() - 7);
+  else if (range === 'month') from.setMonth(now.getMonth() - 1);
+  else if (range === 'year') from.setFullYear(now.getFullYear() - 1);
+  else if (range === 'all') from = new Date(0);
+  return { range, fromMs: from.getTime(), toMs: Date.now() };
+}
+function renderReports() {
+  const { range, fromMs, toMs } = getReportRange();
+  const paidOrders = db.orders.filter(o => o.paid && o.paidAt >= fromMs && o.paidAt <= toMs);
+  const total = paidOrders.reduce((s, o) => s + o.price * o.quantity, 0);
+  const rentTotal = paidOrders.filter(o => o.category === "Room Rent")
+                               .reduce((s, o) => s + o.price * o.quantity, 0);
+  const orderRows = paidOrders.length === 0
+    ? `<div class="empty">No paid orders in this period.</div>`
+    : paidOrders.slice().reverse().map(o => {
+        const room = db.rooms.find(r => r.id === o.roomId);
+        const isRent = o.category === "Room Rent";
+        return `<div class="item-row">
+            <div class="item-info">
+              <div class="item-name">${isRent ? '🏠 ' : ''}${esc(o.itemName)} × ${o.quantity}</div>
+              <div class="item-detail">${room ? esc(room.name) : '-'} • ${esc(o.category)} • ${fmtDate(o.paidAt)}</div>
+            </div>
+            <div class="item-total">${money(o.price * o.quantity)}</div>
+          </div>`;
+      }).join('');
+  return `
+    <div class="tab-bar">
+      ${['today','week','month','year','all'].map(r =>
+        `<button class="tab ${r === range ? 'active' : ''}" onclick="window._reportRange='${r}';render()">${r[0].toUpperCase() + r.slice(1)}</button>`).join('')}
+    </div>
+    <div class="stat-box">
+      <div class="stat-label">Total Collection</div>
+      <div class="stat-value">${money(total)}</div>
+      <div class="stat-sub">${paidOrders.length} items sold · 🏠 Rent ${money(rentTotal)}</div>
+    </div>
+    <div class="card">
+      <div class="flex-space">
+        <div style="font-weight:600">Export Records</div>
+      </div>
+      <div class="export-btn-row">
+        <button class="btn btn-success btn-sm" onclick="exportToExcel()">📥 Download Excel (.xlsx)</button>
+      </div>
+      <div style="font-size:12px;color:var(--text-muted);margin-top:8px">
+        Exports the selected date range (${range}) with 3 sheets: Summary, Orders, Customers.
+      </div>
+    </div>
+    <div class="card">${orderRows}</div>`;
+}
+
+// ═══════════════════ EXCEL EXPORT ═══════════════════
+function exportToExcel() {
+  if (typeof XLSX === 'undefined') { toast('Excel library not loaded'); return; }
+  const { range, fromMs, toMs } = getReportRange();
+  const paidOrders = db.orders.filter(o => o.paid && o.paidAt >= fromMs && o.paidAt <= toMs);
+  if (paidOrders.length === 0) { toast('No paid orders in this range'); return; }
+  const wb = XLSX.utils.book_new();
+
+  const byDate = {};
+  paidOrders.forEach(o => {
+    const d = ymd(o.paidAt);
+    if (!byDate[d]) byDate[d] = { date: d, items: 0, orders: 0, rent: 0, food: 0, drinks: 0, snacks: 0, total: 0 };
+    const amt = o.price * o.quantity;
+    byDate[d].items += o.quantity; byDate[d].orders += 1; byDate[d].total += amt;
+    if (o.category === 'Room Rent') byDate[d].rent += amt;
+    else if (o.category === 'Food') byDate[d].food += amt;
+    else if (o.category === 'Drinks') byDate[d].drinks += amt;
+    else if (o.category === 'Snacks') byDate[d].snacks += amt;
+  });
+  const summaryRows = Object.values(byDate).sort((a,b) => a.date.localeCompare(b.date));
+  const summaryTotal = summaryRows.reduce((s, r) => s + r.total, 0);
+  const summaryAOA = [
+    ['Date', 'Total Orders', 'Total Items', 'Room Rent (₹)', 'Food (₹)', 'Drinks (₹)', 'Snacks (₹)', 'Day Total (₹)'],
+    ...summaryRows.map(r => [r.date, r.orders, r.items, r.rent, r.food, r.drinks, r.snacks, r.total]),
+    ['GRAND TOTAL', summaryRows.reduce((s,r)=>s+r.orders,0), summaryRows.reduce((s,r)=>s+r.items,0),
+      summaryRows.reduce((s,r)=>s+r.rent,0), summaryRows.reduce((s,r)=>s+r.food,0),
+      summaryRows.reduce((s,r)=>s+r.drinks,0), summaryRows.reduce((s,r)=>s+r.snacks,0), summaryTotal]
+  ];
+  const wsSummary = XLSX.utils.aoa_to_sheet(summaryAOA);
+  wsSummary['!cols'] = [{wch:12},{wch:12},{wch:12},{wch:14},{wch:12},{wch:12},{wch:12},{wch:14}];
+  XLSX.utils.book_append_sheet(wb, wsSummary, 'Summary');
+
+  const orderRowsAOA = [
+    ['Date', 'Time', 'Room/Table', 'Item', 'Category', 'Qty', 'Unit Price (₹)', 'Total (₹)'],
+    ...paidOrders.slice().sort((a,b) => a.paidAt - b.paidAt).map(o => {
+      const room = db.rooms.find(r => r.id === o.roomId);
+      const d = new Date(o.paidAt);
+      return [ymd(o.paidAt), d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
+        room ? room.name : '-', o.itemName, o.category, o.quantity, o.price, o.price * o.quantity];
+    })
+  ];
+  const wsOrders = XLSX.utils.aoa_to_sheet(orderRowsAOA);
+  wsOrders['!cols'] = [{wch:12},{wch:10},{wch:16},{wch:22},{wch:12},{wch:6},{wch:12},{wch:12}];
+  XLSX.utils.book_append_sheet(wb, wsOrders, 'Orders');
+
+  const custAOA = [['Room/Table','Name','ID Type','ID Number','Phone','DOB','Gender','Address']];
+  Object.entries(db.customers).forEach(([roomId, c]) => {
+    const room = db.rooms.find(r => r.id === roomId);
+    custAOA.push([room ? room.name : roomId, c.name || '', c.idType || '', c.idNumber || '', c.phone || '', c.dob || '', c.gender || '', c.address || '']);
+  });
+  if (custAOA.length === 1) custAOA.push(['(no active customers)', '', '', '', '', '', '', '']);
+  const wsCust = XLSX.utils.aoa_to_sheet(custAOA);
+  wsCust['!cols'] = [{wch:16},{wch:20},{wch:14},{wch:18},{wch:14},{wch:12},{wch:10},{wch:30}];
+  XLSX.utils.book_append_sheet(wb, wsCust, 'Customers');
+
+  XLSX.writeFile(wb, `waveshore-records-${range}-${ymd(Date.now())}.xlsx`);
+  toast('Excel file downloaded');
+}
+
+// ─────────── modals ───────────
+function openModal(html) {
+  document.getElementById('modalContent').innerHTML = html;
+  document.getElementById('modalBackdrop').classList.add('show');
+}
+function closeModal() {
+  document.getElementById('modalBackdrop').classList.remove('show');
+  document.getElementById('modalContent').innerHTML = '';
+}
+
+// ─────────── rooms CRUD ───────────
+function openAddRoomModal() {
+  openModal(`
+    <h2>New Room / Table</h2>
+    <div class="form-group"><label>Name</label><input id="newRoomName" placeholder="e.g. Room 101, Table 3" /></div>
+    <div class="form-group"><label>Tax % (default ${DEFAULT_TAX_PERCENT}%)</label><input id="newRoomTax" type="number" value="${DEFAULT_TAX_PERCENT}" min="0" step="0.5" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addRoom()">Add</button>
+    </div>`);
+  setTimeout(() => document.getElementById('newRoomName').focus(), 50);
+}
+function addRoom() {
+  const name = document.getElementById('newRoomName').value.trim();
+  const tax = parseFloat(document.getElementById('newRoomTax').value) || 0;
+  if (!name) { toast('Enter a name'); return; }
+  db.rooms.push({ id: uid(), name, isOccupied: true, taxPercent: tax, discountValue: 0, discountIsPercent: false, createdAt: Date.now() });
+  saveDB(); closeModal(); render(); toast('Room added');
+}
+function deleteRoom(roomId) {
+  if (!confirm('Delete this room and its orders?')) return;
+  db.rooms = db.rooms.filter(r => r.id !== roomId);
+  db.orders = db.orders.filter(o => o.roomId !== roomId);
+  delete db.customers[roomId];
+  saveDB(); render(); toast('Room deleted');
+}
+function openRoomSettingsModal() {
+  const room = db.rooms.find(r => r.id === currentRoomId);
+  if (!room) return;
+  openModal(`
+    <h2>Room Settings</h2>
+    <div class="form-group"><label>Name</label><input id="rName" value="${esc(room.name)}" /></div>
+    <div class="form-group"><label>Tax %</label><input id="rTax" type="number" value="${room.taxPercent}" min="0" step="0.5" /></div>
+    <div class="form-group">
+      <label>Discount (0 = none)</label>
+      <div class="row">
+        <input id="rDisc" type="number" value="${room.discountValue}" min="0" step="0.5" />
+        <select id="rDiscType">
+          <option value="amount" ${!room.discountIsPercent ? 'selected' : ''}>₹ Amount</option>
+          <option value="percent" ${room.discountIsPercent ? 'selected' : ''}>% Percent</option>
+        </select>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveRoomSettings()">Save</button>
+    </div>`);
+}
+function saveRoomSettings() {
+  const room = db.rooms.find(r => r.id === currentRoomId);
+  if (!room) return;
+  room.name = document.getElementById('rName').value.trim() || room.name;
+  room.taxPercent = parseFloat(document.getElementById('rTax').value) || 0;
+  room.discountValue = parseFloat(document.getElementById('rDisc').value) || 0;
+  room.discountIsPercent = document.getElementById('rDiscType').value === 'percent';
+  saveDB(); closeModal(); render(); toast('Saved');
+}
+
+// ─────────── orders ───────────
+function openAddItemModal() {
+  const cats = [...new Set(MENU_ITEMS.map(i => i.category))];
+  const grouped = cats.map(cat => {
+    const items = MENU_ITEMS.map((it, i) => ({ ...it, idx: i })).filter(it => it.category === cat);
+    return `
+      <div style="margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">
+          ${CATEGORY_ICON[cat] || ''} ${esc(cat)}
+        </div>
+        <div class="chip-row" style="margin-top:0">
+          ${items.map(it => `<span class="chip ${cat==='Room Rent'?'cat-chip':''}" onclick="pickItem(${it.idx})">${esc(it.name)} · ${money(it.price)}</span>`).join('')}
+        </div>
+      </div>`;
+  }).join('');
+  openModal(`
+    <h2>Add Item</h2>
+    <div class="form-group"><label>Quick pick</label>${grouped}</div>
+    <div class="form-group"><label>Item Name</label><input id="itName" /></div>
+    <div class="row">
+      <div class="form-group"><label>Price (₹)</label><input id="itPrice" type="number" min="0" step="1" /></div>
+      <div class="form-group"><label>Qty</label><input id="itQty" type="number" min="1" value="1" /></div>
+    </div>
+    <div class="form-group"><label>Category</label>
+      <select id="itCat">${cats.map(c => `<option>${c}</option>`).join('')}</select>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="addOrderItem()">Add</button>
+    </div>`);
+}
+function pickItem(i) {
+  const it = MENU_ITEMS[i];
+  document.getElementById('itName').value = it.name;
+  document.getElementById('itPrice').value = it.price;
+  document.getElementById('itQty').value = 1;
+  const sel = document.getElementById('itCat');
+  if ([...sel.options].some(o => o.value === it.category)) sel.value = it.category;
+}
+function addOrderItem() {
+  const name = document.getElementById('itName').value.trim();
+  const price = parseFloat(document.getElementById('itPrice').value);
+  const qty = parseInt(document.getElementById('itQty').value) || 1;
+  const cat = document.getElementById('itCat').value;
+  if (!name || isNaN(price)) { toast('Enter item name and price'); return; }
+  db.orders.push({ id: uid(), roomId: currentRoomId, itemName: name, price, quantity: qty, category: cat, paid: false, createdAt: Date.now() });
+  saveDB(); closeModal(); render(); toast('Item added');
+}
+function deleteOrder(id) {
+  if (!confirm('Remove this item?')) return;
+  db.orders = db.orders.filter(o => o.id !== id);
+  saveDB(); render();
+}
+
+// ─────────── customer + OCR ───────────
+function openCustomerScreen() {
+  const room = db.rooms.find(r => r.id === currentRoomId);
+  if (!room) return;
+  const cust = db.customers[room.id] || {};
+  currentPhotoData = cust.photo || null;
+  openModal(`
+    <h2>🆔 Customer Details — ${esc(room.name)}</h2>
+    <div class="form-group">
+      <label>ID Proof Photo (auto-extracts details)</label>
+      <div id="photoArea">
+        ${cust.photo ? `
+          <div class="photo-preview" id="photoPreview">
+            <img src="${cust.photo}" alt="ID" />
+            <button class="remove-btn" onclick="removePhoto()">✕ Remove</button>
+          </div>
+          <button class="btn btn-secondary btn-sm mt" style="width:100%" onclick="capturePhoto()">🔄 Retake & Re-scan</button>
+        ` : `
+          <div class="photo-upload" onclick="capturePhoto()">
+            <div class="icon">📸</div>
+            <div class="label">Take photo of ID</div>
+            <div class="hint">Aadhaar / PAN / DL / Passport / Voter ID</div>
+          </div>
+        `}
+      </div>
+      <div id="ocrStatus"></div>
+    </div>
+    <div class="form-group"><label>ID Type</label>
+      <select id="custIdType">
+        ${['Aadhaar','PAN','Driving License','Passport','Voter ID','Other'].map(t =>
+          `<option ${cust.idType === t ? 'selected' : ''}>${t}</option>`).join('')}
+      </select>
+    </div>
+    <div class="form-group"><label>ID Number</label><input id="custIdNumber" value="${esc(cust.idNumber || '')}" placeholder="Auto-filled" /></div>
+    <div class="form-group"><label>Full Name</label><input id="custName" value="${esc(cust.name || '')}" placeholder="Auto-filled" /></div>
+    <div class="form-group"><label>Phone (WhatsApp)</label><input id="custPhone" value="${esc(cust.phone || '')}" placeholder="e.g. 9876543210" /></div>
+    <div class="row">
+      <div class="form-group"><label>Date of Birth</label><input id="custDob" type="date" value="${esc(cust.dob || '')}" /></div>
+      <div class="form-group"><label>Gender</label>
+        <select id="custGender">
+          <option value="">-</option>
+          ${['Male','Female','Other'].map(g => `<option ${cust.gender === g ? 'selected' : ''}>${g}</option>`).join('')}
+        </select>
+      </div>
+    </div>
+    <div class="form-group"><label>Address</label><textarea id="custAddress" rows="2">${esc(cust.address || '')}</textarea></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveCustomer()">Save</button>
+    </div>`);
+}
+function capturePhoto() { document.getElementById('idPhotoCamera').click(); }
+function handleIdPhoto(ev) {
+  const file = ev.target.files && ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = async () => {
+    currentPhotoData = reader.result;
+    const area = document.getElementById('photoArea');
+    area.innerHTML = `<div class="photo-preview" id="photoPreview">
+        <img src="${currentPhotoData}" alt="ID" />
+        <button class="remove-btn" onclick="removePhoto()">✕ Remove</button>
+      </div>
+      <button class="btn btn-secondary btn-sm mt" style="width:100%" onclick="capturePhoto()">🔄 Retake & Re-scan</button>`;
+    runOCR(currentPhotoData);
+  };
+  reader.readAsDataURL(file);
+}
+function removePhoto() {
+  currentPhotoData = null;
+  document.getElementById('photoArea').innerHTML = `
+    <div class="photo-upload" onclick="capturePhoto()">
+      <div class="icon">📸</div>
+      <div class="label">Take photo of ID</div>
+      <div class="hint">Aadhaar / PAN / DL / Passport / Voter ID</div>
+    </div>`;
+  document.getElementById('ocrStatus').innerHTML = '';
+}
+async function runOCR(dataUrl) {
+  const status = document.getElementById('ocrStatus');
+  status.className = 'ocr-status loading';
+  status.textContent = '🔍 Reading ID…';
+  try {
+    const { data: { text } } = await Tesseract.recognize(dataUrl, 'eng', {
+      logger: m => {
+        if (m.status === 'recognizing text') {
+          const pct = Math.round((m.progress || 0) * 100);
+          status.innerHTML = `🔍 Reading ID… ${pct}%<div class="progress"><div class="progress-bar" style="width:${pct}%"></div></div>`;
+        }
+      }
+    });
+    parseOCRText(text);
+    status.className = 'ocr-status success';
+    status.textContent = '✅ Scanned — review & save';
+  } catch (e) {
+    console.error(e);
+    status.className = 'ocr-status error';
+    status.textContent = '❌ Scan failed. Enter details manually.';
+  }
+}
+function parseOCRText(text) {
+  const t = text.replace(/\s+/g, ' ');
+  const aadhaar = t.match(/\b(\d{4}\s?\d{4}\s?\d{4})\b/);
+  if (aadhaar) {
+    document.getElementById('custIdNumber').value = aadhaar[1].replace(/\s/g, '');
+    document.getElementById('custIdType').value = 'Aadhaar';
+  }
+  const pan = t.match(/\b([A-Z]{5}\d{4}[A-Z])\b/);
+  if (pan) {
+    document.getElementById('custIdNumber').value = pan[1];
+    document.getElementById('custIdType').value = 'PAN';
+  }
+  const dob = t.match(/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b/);
+  if (dob) {
+    const parts = dob[1].split(/[\/\-]/);
+    document.getElementById('custDob').value = parts[2] + '-' + parts[1] + '-' + parts[0];
+  }
+  if (/\b(male|female|other)\b/i.test(t)) {
+    const m = t.match(/\b(male|female|other)\b/i)[1];
+    const g = m[0].toUpperCase() + m.slice(1).toLowerCase();
+    const sel = document.getElementById('custGender');
+    if ([...sel.options].some(o => o.value === g)) sel.value = g;
+  }
+  const nameMatch = t.match(/(?:name[:\s]+)([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,3})/i);
+  if (nameMatch && !document.getElementById('custName').value) {
+    document.getElementById('custName').value = nameMatch[1].trim();
+  }
+  const phone = t.match(/\b([6-9]\d{9})\b/);
+  if (phone && !document.getElementById('custPhone').value) {
+    document.getElementById('custPhone').value = phone[1];
+  }
+}
+function saveCustomer() {
+  const roomId = currentRoomId;
+  const cust = {
+    name: document.getElementById('custName').value.trim(),
+    idType: document.getElementById('custIdType').value,
+    idNumber: document.getElementById('custIdNumber').value.trim(),
+    phone: document.getElementById('custPhone').value.trim(),
+    dob: document.getElementById('custDob').value,
+    gender: document.getElementById('custGender').value,
+    address: document.getElementById('custAddress').value.trim(),
+    photo: currentPhotoData || null
+  };
+  if (!cust.name && !cust.idNumber && !cust.photo) { toast('Enter at least a name or ID'); return; }
+  db.customers[roomId] = cust;
+  saveDB(); closeModal(); render(); toast('Customer saved');
+}
+
+// ═══════════════════ BILL MODAL ═══════════════════
+function renderCategoryBillHtml(orders) {
+  const groups = groupOrdersByCategory(orders);
+  return groups.map(g => `
+    <div class="cat-block">
+      <div class="cat-header">${g.icon} ${esc(g.category)}</div>
+      ${g.items.map(o => `
+        <div class="cat-line">
+          <span>${esc(o.itemName)} × ${o.quantity}</span>
+          <span>${money(o.price * o.quantity)}</span>
+        </div>`).join('')}
+      <div class="cat-subtotal">
+        <span>${esc(g.category)} Subtotal</span>
+        <span>${money(g.subtotal)}</span>
+      </div>
+    </div>`).join('');
+}
+
+function openBillModal() {
+  const room = db.rooms.find(r => r.id === currentRoomId);
+  if (!room) return;
+  const orders = db.orders.filter(o => o.roomId === room.id && !o.paid);
+  if (!orders.length) { toast('No items to bill'); return; }
+  const bill = computeBill(room, orders);
+  const cust = db.customers[room.id];
+  openModal(`
+    <h2>Bill — ${esc(room.name)}</h2>
+    ${cust ? `<div style="font-size:13px;color:var(--text-muted);margin-bottom:8px">👤 ${esc(cust.name || 'Customer')}${cust.phone ? ' · 📞 ' + esc(cust.phone) : ''}</div>` : ''}
+    ${renderCategoryBillHtml(orders)}
+    <div class="summary-row mt"><span>Subtotal</span><span>${money(bill.subtotal)}</span></div>
+    ${bill.discountAmount > 0 ? `<div class="summary-row" style="color:var(--success)"><span>Discount</span><span>-${money(bill.discountAmount)}</span></div>` : ''}
+    ${bill.taxAmount > 0 ? `<div class="summary-row"><span>Tax (${room.taxPercent}%)</span><span>${money(bill.taxAmount)}</span></div>` : ''}
+    <div class="summary-total"><span>TOTAL</span><span>${money(bill.grandTotal)}</span></div>
+
+    <div class="info-box" style="margin-top:12px">
+      <b>📲 Send to customer via WhatsApp:</b><br>
+      • <b>Chat + Text bill</b> — opens customer's WhatsApp chat directly with the full bill as text.<br>
+      • <b>Send Image</b> — saves the bill image and opens customer's chat; attach the saved image.
+    </div>
+
+    <div class="wa-btn-group">
+      <button class="btn btn-whatsapp" onclick="openWhatsAppChat('${room.id}')">
+        💬 Open Chat with Customer (text bill)
+        <small>Goes to customer's WhatsApp directly · tap Send</small>
+      </button>
+      <button class="btn btn-success" onclick="sendBillImageToCustomer('${room.id}')">
+        🖼 Send Bill Image to Customer
+        <small>Downloads bill image + opens customer's chat → attach image</small>
+      </button>
+      <button class="btn btn-primary" onclick="shareBillImage('${room.id}')">
+        📤 Share Bill Image (native share)
+        <small>Opens share sheet · pick WhatsApp + contact · image attached</small>
+      </button>
+      <button class="btn btn-secondary" onclick="downloadBillImage('${room.id}')">
+        ⬇ Download Bill Image
+        <small>Just save the PNG to your device</small>
+      </button>
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-secondary" onclick="printBill('${room.id}')">🖨 Print</button>
+      <button class="btn btn-primary" onclick="settleBill('${room.id}')">✅ Settle</button>
+    </div>`);
+}
+
+// ═══════════════════ 1) OPEN WHATSAPP CHAT WITH TEXT BILL ═══════════════════
+function openWhatsAppChat(roomId) {
+  const room = db.rooms.find(r => r.id === roomId);
+  if (!room) return;
+  const orders = db.orders.filter(o => o.roomId === roomId && !o.paid);
+  if (!orders.length) { toast('No items to bill'); return; }
+  const bill = computeBill(room, orders);
+
+  const phone = ensureCustomerPhone(roomId);
+  if (!phone) return;
+
+  const groups = groupOrdersByCategory(orders);
+  const catLines = groups.map(g =>
+    `*${g.icon} ${g.category}*\n` +
+    g.items.map(o => `• ${o.itemName} × ${o.quantity} = ${money(o.price * o.quantity)}`).join('\n') +
+    `\n_${g.category} Subtotal: ${money(g.subtotal)}_`
+  ).join('\n\n');
+
+  const text =
+    `*${db.settings.businessName || BUSINESS_NAME}*\n` +
+    `Bill for *${room.name}*\n` +
+    `Date: ${new Date().toLocaleString()}\n\n` +
+    catLines + `\n\n` +
+    `Subtotal: ${money(bill.subtotal)}\n` +
+    (bill.discountAmount > 0 ? `Discount: -${money(bill.discountAmount)}\n` : '') +
+    (bill.taxAmount > 0 ? `Tax (${room.taxPercent}%): ${money(bill.taxAmount)}\n` : '') +
+    `*TOTAL: ${money(bill.grandTotal)}*\n\n` +
+    `Thank you for visiting! 🌊`;
+
+  window.open(`https://wa.me/${phone}?text=${encodeURIComponent(text)}`, '_blank');
+  toast('Opening WhatsApp chat with bill text…');
+}
+
+// ═══════════════════ 2) SEND BILL IMAGE TO CUSTOMER (download + open chat) ═══════════════════
+async function sendBillImageToCustomer(roomId) {
+  const room = db.rooms.find(r => r.id === roomId);
+  if (!room) return;
+  const orders = db.orders.filter(o => o.roomId === roomId && !o.paid);
+  if (!orders.length) { toast('No items to bill'); return; }
+
+  const phone = ensureCustomerPhone(roomId);
+  if (!phone) return;
+
+  const blob = await buildBillImageBlob(roomId);
+  const filename = `Bill-${room.name.replace(/\s+/g,'_')}-${ymd(Date.now())}.png`;
+
+  // Download image to device (so it appears in gallery for attaching)
+  downloadBlob(blob, filename);
+
+  // Open customer's chat with a caption
+  const bill = computeBill(room, orders);
+  const caption =
+    `*${db.settings.businessName || BUSINESS_NAME}*\n` +
+    `Bill for ${room.name}\n` +
+    `*TOTAL: ${money(bill.grandTotal)}*\n\n` +
+    `Bill image saved to gallery. Please attach it in the next message. 🙏`;
+
+  // Small delay so the download toast/notification doesn't block the tab open
+  setTimeout(() => {
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(caption)}`, '_blank');
+  }, 400);
+
+  toast('Image downloaded — attach it in the chat that opens');
+}
+
+// ═══════════════════ 3) SHARE BILL IMAGE (native share) ═══════════════════
+async function shareBillImage(roomId) {
+  const room = db.rooms.find(r => r.id === roomId);
+  if (!room) return;
+  const orders = db.orders.filter(o => o.roomId === roomId && !o.paid);
+  if (!orders.length) { toast('No items to bill'); return; }
+
+  const blob = await buildBillImageBlob(roomId);
+  const filename = `Bill-${room.name.replace(/\s+/g,'_')}-${ymd(Date.now())}.png`;
+  const file = new File([blob], filename, { type: 'image/png' });
+
+  const bill = computeBill(room, orders);
+  const caption =
+    `*${db.settings.businessName || BUSINESS_NAME}*\n` +
+    `Bill for ${room.name}\n` +
+    `*TOTAL: ${money(bill.grandTotal)}*\n\n` +
+    `Thank you for visiting! 🌊`;
+
+  if (navigator.canShare && navigator.canShare({ files: [file] })) {
+    try {
+      await navigator.share({ files: [file], title: filename, text: caption });
+      toast('Image shared');
+      return;
+    } catch (e) {
+      if (e.name === 'AbortError') return;
+      console.warn('Share failed, falling back', e);
+    }
+  }
+
+  // Fallback: download + open customer chat
+  downloadBlob(blob, filename);
+  const phone = normalizePhone(db.customers[roomId] && db.customers[roomId].phone);
+  if (phone) {
+    window.open(`https://wa.me/${phone}?text=${encodeURIComponent(caption)}`, '_blank');
+  }
+  toast('Image downloaded — attach it in the WhatsApp chat');
+}
+
+// ═══════════════════ 4) DOWNLOAD BILL IMAGE ONLY ═══════════════════
+async function downloadBillImage(roomId) {
+  const room = db.rooms.find(r => r.id === roomId);
+  if (!room) return;
+  const blob = await buildBillImageBlob(roomId);
+  const filename = `Bill-${room.name.replace(/\s+/g,'_')}-${ymd(Date.now())}.png`;
+  downloadBlob(blob, filename);
+  toast('Bill image downloaded');
+}
+
+function downloadBlob(blob, filename) {
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url; a.download = filename;
+  document.body.appendChild(a); a.click(); a.remove();
+  setTimeout(() => URL.revokeObjectURL(url), 3000);
+}
+
+// ═══════════════════ BILL IMAGE RENDERER (canvas) ═══════════════════
+async function buildBillImageBlob(roomId) {
+  const room = db.rooms.find(r => r.id === roomId);
+  const orders = db.orders.filter(o => o.roomId === roomId && !o.paid);
+  const bill = computeBill(room, orders);
+  const cust = db.customers[roomId];
+  const groups = groupOrdersByCategory(orders);
+  const now = new Date();
+
+  // ─── Layout constants ───
+  const W = 900;                    // canvas width (px)
+  const PAD = 40;
+  const COL_ITEM = PAD;
+  const COL_QTY = W - PAD - 260;
+  const COL_PRICE = W - PAD - 180;
+  const COL_TOTAL = W - PAD;
+
+  const LINE = 30;
+  const CAT_HEADER_H = 40;
+  const SUBTOTAL_H = 36;
+  const GAP = 16;
+
+  // ─── Measure height ───
+  let contentHeight = 0;
+  contentHeight += 130;             // header bar
+  contentHeight += 130;             // room info block
+  contentHeight += 40;              // column header
+  groups.forEach(g => {
+    contentHeight += CAT_HEADER_H;
+    contentHeight += 34;            // per-category col header row
+    contentHeight += g.items.length * LINE;
+    contentHeight += SUBTOTAL_H;
+    contentHeight += GAP;
+  });
+  contentHeight += 200;             // grand totals block
+  contentHeight += 80;              // footer
+
+  const H = Math.max(700, contentHeight);
+
+  // ─── Create canvas ───
+  const canvas = document.createElement('canvas');
+  canvas.width = W;
+  canvas.height = H;
+  const ctx = canvas.getContext('2d');
+
+  // ─── Background ───
+  ctx.fillStyle = '#ffffff';
+  ctx.fillRect(0, 0, W, H);
+
+  // ─── Top header bar ───
+  const grad = ctx.createLinearGradient(0, 0, W, 100);
+  grad.addColorStop(0, '#133b5c');
+  grad.addColorStop(1, '#1e5a8a');
+  ctx.fillStyle = grad;
+  ctx.fillRect(0, 0, W, 100);
+
+  // Gold accent line
+  ctx.fillStyle = '#d4a353';
+  ctx.fillRect(0, 100, W, 4);
+
+  // Business name
+  ctx.fillStyle = '#ffffff';
+  ctx.textAlign = 'center';
+  ctx.font = 'bold 30px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.fillText(db.settings.businessName || BUSINESS_NAME, W / 2, 46);
+  ctx.font = '13px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.fillStyle = '#d4a353';
+  ctx.fillText('THE BEACH RESORT', W / 2, 68);
+  ctx.fillStyle = '#cbd5e1';
+  ctx.font = '11px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.fillText('TAX INVOICE', W / 2, 86);
+
+  // ─── Room info block ───
+  let y = 140;
+  ctx.textAlign = 'left';
+  ctx.fillStyle = '#133b5c';
+  ctx.font = 'bold 22px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.fillText(room.name, PAD, y);
+
+  ctx.fillStyle = '#64748b';
+  ctx.font = '13px "Segoe UI", Roboto, Arial, sans-serif';
+  y += 26;
+  ctx.fillText('Date: ' + now.toLocaleString(), PAD, y);
+  y += 20;
+  ctx.fillText('Invoice No: INV-' + ymd(now).replace(/-/g,'') + '-' + String(Date.now()).slice(-4), PAD, y);
+
+  if (cust && cust.name) {
+    y += 20;
+    ctx.fillStyle = '#1e293b';
+    ctx.font = 'bold 13px "Segoe UI", Roboto, Arial, sans-serif';
+    ctx.fillText('Customer: ' + cust.name, PAD, y);
+  }
+  if (cust && cust.phone) {
+    y += 18;
+    ctx.fillStyle = '#64748b';
+    ctx.font = '12px "Segoe UI", Roboto, Arial, sans-serif';
+    ctx.fillText('Phone: ' + cust.phone, PAD, y);
+  }
+
+  // ─── Logo (top right) ───
+  try {
+    const logoImg = await loadImage(APP_LOGO);
+    ctx.drawImage(logoImg, W - PAD - 90, 130, 90, 90);
+  } catch (e) { /* ignore */ }
+
+  // ─── Divider ───
+  y = 260;
+  ctx.strokeStyle = '#133b5c';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+  y += 24;
+
+  // ─── Column headers (shared) ───
+  const drawColHeader = () => {
+    ctx.fillStyle = '#64748b';
+    ctx.font = 'bold 11px "Segoe UI", Roboto, Arial, sans-serif';
+    ctx.textAlign = 'left';  ctx.fillText('ITEM', COL_ITEM, y);
+    ctx.textAlign = 'center'; ctx.fillText('QTY', COL_QTY, y);
+    ctx.textAlign = 'right';  ctx.fillText('PRICE', COL_PRICE, y);
+    ctx.fillText('TOTAL', COL_TOTAL, y);
+    y += 8;
+    ctx.strokeStyle = '#e2e8f0';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+    y += 20;
+  };
+
+  // ─── Categories ───
+  groups.forEach((g, gi) => {
+    // Category header band
+    ctx.fillStyle = '#eef2f7';
+    ctx.fillRect(PAD, y - 22, W - 2 * PAD, 32);
+    ctx.fillStyle = '#133b5c';
+    ctx.font = 'bold 14px "Segoe UI", Roboto, Arial, sans-serif';
+    ctx.textAlign = 'left';
+    ctx.fillText(`${g.icon}  ${g.category}`, PAD + 10, y);
+    y += 26;
+
+    if (gi === 0) {
+      drawColHeader();
+    } else {
+      ctx.fillStyle = '#64748b';
+      ctx.font = 'bold 11px "Segoe UI", Roboto, Arial, sans-serif';
+      ctx.textAlign = 'left';   ctx.fillText('ITEM', COL_ITEM, y);
+      ctx.textAlign = 'center'; ctx.fillText('QTY', COL_QTY, y);
+      ctx.textAlign = 'right';  ctx.fillText('PRICE', COL_PRICE, y);
+      ctx.fillText('TOTAL', COL_TOTAL, y);
+      y += 8;
+      ctx.strokeStyle = '#e2e8f0';
+      ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+      y += 20;
+    }
+
+    // Items
+    g.items.forEach(o => {
+      const lineTotal = o.price * o.quantity;
+      ctx.fillStyle = '#1e293b';
+      ctx.font = '13px "Segoe UI", Roboto, Arial, sans-serif';
+      ctx.textAlign = 'left';   ctx.fillText(o.itemName, COL_ITEM, y);
+      ctx.textAlign = 'center'; ctx.fillText(String(o.quantity), COL_QTY, y);
+      ctx.textAlign = 'right';  ctx.fillText(money(o.price), COL_PRICE, y);
+      ctx.fillText(money(lineTotal), COL_TOTAL, y);
+      y += LINE;
+    });
+
+    // Subtotal
+    ctx.strokeStyle = '#133b5c';
+    ctx.lineWidth = 1;
+    ctx.beginPath(); ctx.moveTo(PAD, y - 12); ctx.lineTo(W - PAD, y - 12); ctx.stroke();
+    ctx.fillStyle = '#133b5c';
+    ctx.font = 'bold 13px "Segoe UI", Roboto, Arial, sans-serif';
+    ctx.textAlign = 'left';  ctx.fillText(`${g.category} Subtotal`, PAD + 10, y + 8);
+    ctx.textAlign = 'right'; ctx.fillText(money(g.subtotal), COL_TOTAL, y + 8);
+    y += SUBTOTAL_H + GAP;
+  });
+
+  // ─── Grand totals block ───
+  y += 10;
+  ctx.strokeStyle = '#133b5c';
+  ctx.lineWidth = 2;
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+  y += 24;
+
+  const totalLabelX = W - PAD - 280;
+  const totalValX = W - PAD;
+
+  ctx.font = '14px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.fillStyle = '#1e293b';
+  ctx.textAlign = 'left';
+  ctx.fillText('Subtotal', totalLabelX, y);
+  ctx.textAlign = 'right';
+  ctx.fillText(money(bill.subtotal), totalValX, y);
+  y += 24;
+
+  if (bill.discountAmount > 0) {
+    ctx.fillStyle = '#16a34a';
+    ctx.textAlign = 'left';  ctx.fillText('Discount', totalLabelX, y);
+    ctx.textAlign = 'right'; ctx.fillText('-' + money(bill.discountAmount), totalValX, y);
+    y += 24;
+    ctx.fillStyle = '#1e293b';
+  }
+  if (bill.taxAmount > 0) {
+    ctx.textAlign = 'left';  ctx.fillText('Tax (' + room.taxPercent + '%)', totalLabelX, y);
+    ctx.textAlign = 'right'; ctx.fillText(money(bill.taxAmount), totalValX, y);
+    y += 24;
+  }
+
+  // TOTAL band
+  const bandX = totalLabelX - 20;
+  const bandY = y + 4;
+  const bandW = totalValX - bandX + 20;
+  const bandH = 44;
+  const grad2 = ctx.createLinearGradient(bandX, bandY, bandX + bandW, bandY + bandH);
+  grad2.addColorStop(0, '#133b5c');
+  grad2.addColorStop(1, '#1e5a8a');
+  ctx.fillStyle = grad2;
+  roundRect(ctx, bandX, bandY, bandW, bandH, 8);
+  ctx.fill();
+  ctx.fillStyle = '#ffffff';
+  ctx.font = 'bold 20px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.textAlign = 'left';
+  ctx.fillText('TOTAL', bandX + 16, bandY + 29);
+  ctx.textAlign = 'right';
+  ctx.font = 'bold 22px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.fillText(money(bill.grandTotal), bandX + bandW - 16, bandY + 30);
+
+  y = bandY + bandH + 40;
+
+  // ─── Footer ───
+  ctx.strokeStyle = '#e2e8f0';
+  ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
+  y += 24;
+  ctx.fillStyle = '#64748b';
+  ctx.font = 'italic 13px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.textAlign = 'center';
+  ctx.fillText('Thank you for your visit! 🌊', W / 2, y);
+  y += 18;
+  ctx.fillStyle = '#94a3b8';
+  ctx.font = '11px "Segoe UI", Roboto, Arial, sans-serif';
+  ctx.fillText(db.settings.businessName || BUSINESS_NAME, W / 2, y);
+
+  // ─── Convert to PNG blob ───
+  return new Promise(resolve => {
+    canvas.toBlob(blob => resolve(blob), 'image/png', 0.95);
+  });
+}
+
+function roundRect(ctx, x, y, w, h, r) {
+  ctx.beginPath();
+  ctx.moveTo(x + r, y);
+  ctx.lineTo(x + w - r, y);
+  ctx.quadraticCurveTo(x + w, y, x + w, y + r);
+  ctx.lineTo(x + w, y + h - r);
+  ctx.quadraticCurveTo(x + w, y + h, x + w - r, y + h);
+  ctx.lineTo(x + r, y + h);
+  ctx.quadraticCurveTo(x, y + h, x, y + h - r);
+  ctx.lineTo(x, y + r);
+  ctx.quadraticCurveTo(x, y, x + r, y);
+  ctx.closePath();
+}
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.crossOrigin = 'anonymous';
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+// ─── Print ───
+function printBill(roomId) {
+  const room = db.rooms.find(r => r.id === roomId);
+  const orders = db.orders.filter(o => o.roomId === roomId && !o.paid);
+  const bill = computeBill(room, orders);
+  const cust = db.customers[roomId];
+  const now = new Date();
+  const groups = groupOrdersByCategory(orders);
+  const categoryBlocks = groups.map(g => `
+    <div class="print-cat-header">${g.icon} ${esc(g.category)}</div>
+    <table class="print-cat-table">
+      ${g.items.map(o => `<tr>
+        <td>${esc(o.itemName)} × ${o.quantity}</td>
+        <td style="text-align:right">${money(o.price * o.quantity)}</td>
+      </tr>`).join('')}
+      <tr class="print-subtotal">
+        <td>${esc(g.category)} Subtotal</td>
+        <td style="text-align:right">${money(g.subtotal)}</td>
+      </tr>
+    </table>`).join('');
+  const html = `
+    <div class="print-header">
+      <img src="${APP_LOGO}" class="print-logo" />
+      <h2>${esc(db.settings.businessName || BUSINESS_NAME)}</h2>
+      <p>${esc(room.name)}</p>
+      <p>${now.toLocaleString()}</p>
+    </div>
+    <div class="print-dashed"></div>
+    ${cust ? `<p style="font-size:12px;margin:0 0 6px">Customer: ${esc(cust.name || '-')}${cust.phone ? ' · ' + esc(cust.phone) : ''}</p>` : ''}
+    ${categoryBlocks}
+    <div class="print-dashed"></div>
+    <table style="width:100%;font-size:12px">
+      <tr><td>Subtotal</td><td style="text-align:right">${money(bill.subtotal)}</td></tr>
+      ${bill.discountAmount > 0 ? `<tr><td>Discount</td><td style="text-align:right">-${money(bill.discountAmount)}</td></tr>` : ''}
+      ${bill.taxAmount > 0 ? `<tr><td>Tax (${room.taxPercent}%)</td><td style="text-align:right">${money(bill.taxAmount)}</td></tr>` : ''}
+      <tr style="font-weight:bold;font-size:14px"><td>TOTAL</td><td style="text-align:right">${money(bill.grandTotal)}</td></tr>
+    </table>
+    <div class="print-dashed"></div>
+    <p style="text-align:center;font-size:11px">Thank you! Visit again 🌊</p>`;
+  const area = document.getElementById('billPrintArea');
+  area.innerHTML = html;
+  area.style.display = 'block';
+  window.print();
+  setTimeout(() => { area.style.display = 'none'; }, 500);
+}
+
+function settleBill(roomId) {
+  const room = db.rooms.find(r => r.id === roomId);
+  const orders = db.orders.filter(o => o.roomId === roomId && !o.paid);
+  if (!orders.length) return;
+  const now = Date.now();
+  orders.forEach(o => { o.paid = true; o.paidAt = now; });
+  room.isOccupied = false;
+  room.discountValue = 0;
+  delete db.customers[roomId];
+  saveDB(); closeModal(); render(); toast('Bill settled');
+}
+
+// ─────────── settings + backup ───────────
+function openSettingsModal() {
+  openModal(`
+    <h2>Settings</h2>
+    <div class="form-group"><label>Business Name</label><input id="setBiz" value="${esc(db.settings.businessName || BUSINESS_NAME)}" /></div>
+    <div class="form-group"><label>Default Tax %</label><input id="setTax" type="number" value="${db.settings.taxPercent ?? DEFAULT_TAX_PERCENT}" min="0" step="0.5" /></div>
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveSettings()">Save</button>
+    </div>`);
+}
+function saveSettings() {
+  db.settings.businessName = document.getElementById('setBiz').value.trim() || BUSINESS_NAME;
+  db.settings.taxPercent = parseFloat(document.getElementById('setTax').value) || 0;
+  saveDB(); closeModal(); toast('Settings saved');
+}
+function openBackupModal() {
+  openModal(`
+    <h2>Backup & Restore</h2>
+    <p style="font-size:13px;color:var(--text-muted);margin-bottom:12px">Export all data as a JSON file, or import a previous backup. For Excel records, go to 📊 Reports.</p>
+    <div class="modal-actions" style="justify-content:space-between">
+      <button class="btn btn-secondary" onclick="exportBackup()">⬇ Export JSON</button>
+      <button class="btn btn-secondary" onclick="document.getElementById('importFile').click()">⬆ Import JSON</button>
+      <button class="btn btn-primary" onclick="closeModal()">Close</button>
+    </div>
+    <div class="export-btn-row" style="margin-top:12px">
+      <button class="btn btn-success btn-sm" onclick="exportToExcel()">📥 Download Excel Records</button>
+    </div>
+    <input type="file" id="importFile" accept="application/json" style="display:none" onchange="importBackup(event)" />`);
+}
+function exportBackup() {
+  const blob = new Blob([JSON.stringify(db, null, 2)], { type: 'application/json' });
+  const a = document.createElement('a');
+  a.href = URL.createObjectURL(blob);
+  a.download = `waveshore-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.click();
+  URL.revokeObjectURL(a.href);
+  toast('Backup downloaded');
+}
+function importBackup(ev) {
+  const file = ev.target.files[0];
+  ev.target.value = '';
+  if (!file) return;
+  const reader = new FileReader();
+  reader.onload = () => {
+    try {
+      const data = JSON.parse(reader.result);
+      if (!data.rooms || !data.orders) throw new Error('Invalid file');
+      if (!confirm('Replace all current data with backup?')) return;
+      db = data;
+      db.settings = db.settings || { businessName: BUSINESS_NAME, taxPercent: DEFAULT_TAX_PERCENT };
+      db.customers = db.customers || {};
+      saveDB(); closeModal(); render(); toast('Backup restored');
+    } catch (e) { alert('Invalid backup file: ' + e.message); }
+  };
+  reader.readAsText(file);
+}
+
+// ─────────── init ───────────
+loadDB();
+render();
+</script>
+</body>
+</html>
