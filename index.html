@@ -55,15 +55,17 @@
                     </a>
                     <button class="menu-toggle" id="menuToggle" aria-label="Open menu" aria-expanded="false">☰</button>
                     <nav class="nav-links" id="navLinks" aria-label="Main navigation"><a href="#home" class="active">Home</a><a href="#about">About</a><a href="#stay">Stay With Us</a><a href="#experiences">Experiences</a><a href="#gallery">Gallery</a><a href="#contact">Contact</a></nav>
-                    <a class="nav-book" href="https://wa.me/919664606316?text=Hello%20Waveshore%20Beach%20Resort%2C%20I%20would%20like%20to%20enquire%20about%20a%20stay." target="_blank" rel="noopener noreferrer">Book Your Beach Stay ↗</a>
+                 
+                    <!-- <a class="nav-book" href="https://wa.me/919664606316?text=Hello%20Waveshore%20Beach%20Resort%2C%20I%20would%20like%20to%20enquire%20about%20a%20stay." target="_blank" rel="noopener noreferrer">Book Your Beach Stay ↗</a> -->
+                    <a class="nav-book" href="tel:+919664606316" target="_blank" rel="noopener noreferrer">Book Your Beach Stay ↗</a>
                 </div>
             </header>
             <main>
                 <section class="hero" id="home">
                     <div class="hero-bg" aria-hidden="true"></div>
-                    <div class="container">
+                    <div class="container intro-grid">
                         <div class="hero-content reveal">
-                            <div class="hero-label"><span>✦</span> Your coastal escape awaits</div>
+                            <div class="hero-label"><span>✦</span> Dolphine is now<b>Waveshore</b></div>
                             <h1>Wake Up to<br>the <em>Waves.</em></h1>
                             <p class="hero-copy">Slow down, breathe in the sea air and feel at home by the coast. Discover the warmth of a beachside homestay, fresh local flavours and nights under a sky full of stars at Waveshore Beach Resort.</p>
                             <div class="hero-actions">
@@ -71,13 +73,49 @@
                                 href="https://www.google.com/maps/dir/?api=1&destination=15.775463%2C73.6598839"
   target="_blank">Get Directions → </a>
                                 <a class="btn coral" href="#stay">Explore Your Stay <span>→</span></a>
-                                <a class="btn outline" href="tel:+919664606316" target="_blank" rel="noopener noreferrer">
-                                Ask About Availability</a>
+                                <!-- <a class="btn outline" href="tel:+919664606316" target="_blank" rel="noopener noreferrer">
+                                Ask About Availability</a> -->
                             </div>
 
   
 
                             <div class="hero-footnote"><span><b>✦</b> Beachside getaway</span><span><b>⌂</b> Homely comfort</span><span><b>☼</b> Coastal experiences</span></div>
+                        </div>
+                        <div class="availability_form">
+                            <form class="enq" id="enquire" aria-labelledby="enq-title">
+                                <div class="enq-head">
+                                    <strong id="enq-title">Ask about your dates</strong>
+                                    <span class="enq-note">We usually reply on WhatsApp the same day</span>
+                                </div>
+                                <div class="fields">
+                                    <div class="field">
+                                    <label for="checkin">Check-in</label>
+                                    <input id="checkin" type="date" min="2026-11-12">
+                                    </div>
+                                    <div class="field">
+                                    <label for="nights">Nights</label>
+                                    <select id="nights"><option>1</option><option selected="">2</option><option>3</option><option>4</option><option>5+</option></select>
+                                    </div>
+                                    <div class="field">
+                                    <label for="guests">Guests</label>
+                                    <select id="guests"><option>1</option><option selected="">2</option><option>3</option><option>4</option><option>5</option><option>6</option><option>7–10</option><option>10+</option></select>
+                                    </div>
+                                    <div class="field full">
+                                    <span class="flabel" id="staytype-l">Stay</span>
+                                    <div class="seg" role="radiogroup" aria-labelledby="staytype-l">
+                                        <input type="radio" name="stay" id="s-room" value="Homestay room" checked=""><label for="s-room">Room</label>
+                                        <input type="radio" name="stay" id="s-tent" value="Tent camping"><label for="s-tent">Tent</label>
+                                        <input type="radio" name="stay" id="s-both" value="Room + tent (group)"><label for="s-both">Room + tent</label>
+                                        <input type="radio" name="stay" id="s-meals" value="Not sure yet, please suggest"><label for="s-meals">Not sure yet</label>
+                                    </div>
+                                    </div>
+                                </div>
+                                <div class="enq-foot">
+                                    <a class="btn coral" id="waLink" href="https://wa.me/919664606316?text=Hi%20Waveshore!%20I'd%20like%20to%20check%20availability.%0ACheck-in%3A%2020%20Nov%202026%0ANights%3A%201%0AGuests%3A%202%0AStay%3A%20Homestay%20room" target="_blank" rel="noopener">
+                                     Send on WhatsApp <span>→</span>
+                                    </a>
+                                </div>
+                                </form>
                         </div>
                     </div>
                     <div class="floating-shell" aria-hidden="true"><span>🐚</span></div>
@@ -285,6 +323,76 @@
                 if('IntersectionObserver'in window){const so=new IntersectionObserver(entries=>entries.forEach(e=>{if(e.isIntersecting)links.forEach(a=>a.classList.toggle('active',a.getAttribute('href')==='#'+e.target.id))}),{rootMargin:'-35% 0px -55% 0px'});sections.forEach(s=>so.observe(s))}
                 document.querySelector('#year').textContent=new Date().getFullYear();
             </script>
+
+            <script>
+                (function(){
+                var LAT = 15.775463, LNG = 73.6598839, rad = Math.PI/180;
+
+                // Sunset from the standard sunrise equation, shown in IST
+                function sunset(d){
+                    var J = d.getTime()/86400000 + 2440587.5;
+                    var n = Math.ceil(J - 2451545 + 0.0008);
+                    var Js = n - LNG/360;
+                    var M = (357.5291 + 0.98560028*Js) % 360;
+                    var C = 1.9148*Math.sin(M*rad) + 0.02*Math.sin(2*M*rad) + 0.0003*Math.sin(3*M*rad);
+                    var L = (M + C + 180 + 102.9372) % 360;
+                    var Jt = 2451545 + Js + 0.0053*Math.sin(M*rad) - 0.0069*Math.sin(2*L*rad);
+                    var dec = Math.asin(Math.sin(L*rad)*Math.sin(23.4397*rad));
+                    var w = Math.acos((Math.sin(-0.833*rad) - Math.sin(LAT*rad)*Math.sin(dec)) / (Math.cos(LAT*rad)*Math.cos(dec)));
+                    return new Date((Jt + w/(2*Math.PI) - 2440587.5)*86400000);
+                }
+                try{
+                    var s = sunset(new Date());
+                    var t = s.toLocaleTimeString('en-IN',{hour:'numeric',minute:'2-digit',hour12:true,timeZone:'Asia/Kolkata'}).replace(/\s?(am|pm)/i,'');
+                    document.getElementById('sunsetT').innerHTML = t + '<small>pm IST</small>';
+                    document.getElementById('tlSunset').textContent = t + ' pm';
+                }catch(e){}
+
+                // Enquiry → prefilled WhatsApp message
+                var ci = document.getElementById('checkin');
+                var tmr = new Date(Date.now() + 86400000*7);
+                ci.value = tmr.toISOString().slice(0,10);
+                ci.min = new Date().toISOString().slice(0,10);
+                function build(){
+                    var stay = document.querySelector('input[name="stay"]:checked').value;
+                    var date = ci.value ? new Date(ci.value+'T00:00').toLocaleDateString('en-IN',{day:'numeric',month:'short',year:'numeric'}) : 'flexible';
+                    var msg = 'Hi Waveshore! I\'d like to check availability.\n' +
+                    'Check-in: ' + date + '\nNights: ' + document.getElementById('nights').value +
+                    '\nGuests: ' + document.getElementById('guests').value + '\nStay: ' + stay;
+                    var url = 'https://wa.me/919664606316?text=' + encodeURIComponent(msg);
+                    document.getElementById('waLink').href = url;
+                    document.getElementById('waBar').href = url;
+                }
+                document.getElementById('enquire').addEventListener('input', build);
+                document.getElementById('enquire').addEventListener('change', build);
+                document.getElementById('enquire').addEventListener('submit', function(e){e.preventDefault()});
+                build();
+
+                // "Ask for a tent" etc. preselect the stay type
+                document.querySelectorAll('[data-pick]').forEach(function(a){
+                    a.addEventListener('click', function(){ var r = document.getElementById(a.dataset.pick); if(r){ r.checked = true; build(); } });
+                });
+
+                // Concept switcher — each concept has its own shareable link (#tide, #grove, #dusk)
+                var root = document.documentElement, btns = document.querySelectorAll('.vbtn');
+                function show(){
+                    var h = location.hash.slice(1), v = ['tide','grove','dusk','glass','postcard'].indexOf(h) > -1 ? h : (root.dataset.v || 'tide');
+                    root.dataset.v = v;
+                    btns.forEach(function(b){ b.setAttribute('aria-pressed', b.dataset.v===v ? 'true' : 'false'); });
+                }
+                btns.forEach(function(b){ b.addEventListener('click', function(){ location.hash = b.dataset.v; show(); }); });
+                window.addEventListener('hashchange', show);
+                show();
+
+                // Copy phone number
+                var cp = document.getElementById('copyNum');
+                cp.addEventListener('click', function(){
+                    var num = cp.dataset.num, orig = cp.textContent;
+                    function done(){ cp.textContent = 'Number copied'; setTimeout(function(){cp.textContent = orig}, 1800); }
+                    if(navigator.clipboard){ navigator.clipboard.writeText(num).then(done, function(){}); }
+                });
+                })();
+                </script>
         </body>
 
       </html>
