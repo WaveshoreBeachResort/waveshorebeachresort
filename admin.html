@@ -50,6 +50,11 @@
   .btn-whatsapp:hover { background: #1da851; }
   .btn-secondary { background: var(--border); color: var(--text); }
   .btn-sm { padding: 6px 10px; font-size: 13px; }
+  .qty-btn { background: var(--bg); border: 1px solid var(--border); color: var(--primary);
+    font-weight: 700; width: 30px; height: 30px; border-radius: 6px;
+    display: inline-flex; align-items: center; justify-content: center;
+    cursor: pointer; font-size: 15px; padding: 0; }
+  .qty-btn:hover { background: var(--primary); color: white; border-color: var(--primary); }
   .fab { position: fixed; bottom: 20px; right: 20px; width: 60px; height: 60px; border-radius: 50%;
     background: var(--accent); color: white; border: none; font-size: 28px;
     box-shadow: 0 4px 12px rgba(212, 163, 83, .4); cursor: pointer; z-index: 90; }
@@ -71,10 +76,11 @@
   .modal-actions { display: flex; gap: 8px; justify-content: flex-end; margin-top: 16px; flex-wrap: wrap; }
   .item-row { display: flex; align-items: center; gap: 10px; padding: 10px 0; border-bottom: 1px solid var(--border); }
   .item-row:last-child { border-bottom: none; }
-  .item-info { flex: 1; }
-  .item-name { font-weight: 600; font-size: 15px; }
+  .item-info { flex: 1; min-width: 0; }
+  .item-name { font-weight: 600; font-size: 15px; word-break: break-word; }
   .item-detail { font-size: 13px; color: var(--text-muted); }
-  .item-total { font-weight: 700; }
+  .item-total { font-weight: 700; white-space: nowrap; }
+  .item-actions { display: flex; gap: 4px; align-items: center; }
   .empty { text-align: center; padding: 40px 20px; color: var(--text-muted); font-size: 15px; }
   .chip-row { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
   .chip { padding: 6px 12px; background: var(--bg); border: 1px solid var(--border);
@@ -131,6 +137,7 @@
   .wa-btn-group .btn small { display: block; font-weight: 400; opacity: 0.9; font-size: 11px; margin-top: 2px; line-height: 1.4; }
   .bill-preview-box { text-align: center; margin-top: 12px; }
   .bill-preview-box img { max-width: 100%; border: 1px solid var(--border); border-radius: 8px; box-shadow: 0 2px 6px rgba(0,0,0,.08); }
+  .edit-row { background: #fefce8; border-radius: 8px; margin: 4px 0; padding: 8px; }
   @media print {
     body * { visibility: hidden; }
     #billPrintArea, #billPrintArea * { visibility: visible; }
@@ -154,6 +161,7 @@
   <button class="icon-btn" id="backBtn" style="display:none" onclick="showScreen('home')">←</button>
   <span id="headerLogo" class="header-logo"></span>
   <h1 id="headerTitle">Waveshore Beach Resort</h1>
+  <button class="icon-btn" title="Catalogue" onclick="openCatalogueModal()">📚</button>
   <button class="icon-btn" title="Reports" onclick="showScreen('reports')">📊</button>
   <button class="icon-btn" title="Backup" onclick="openBackupModal()">💾</button>
   <button class="icon-btn" title="Settings" onclick="openSettingsModal()">⚙️</button>
@@ -174,6 +182,7 @@
 
 <script src="https://cdn.jsdelivr.net/npm/tesseract.js@5/dist/tesseract.min.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 
 <script>
 // ═══════════════════ WAVES LOGO ═══════════════════
@@ -201,8 +210,8 @@ const WAVES_LOGO_SVG = `
 </svg>`;
 const APP_LOGO = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(WAVES_LOGO_SVG);
 
-// ═══════════════════ MENU ═══════════════════
-const MENU_ITEMS = [
+// ═══════════════════ DEFAULT CATALOGUE (seed only on first run) ═══════════════════
+const DEFAULT_CATALOGUE = [
   { name: "AC Room (1 Night)",      price: 2500, category: "Room Rent" },
   { name: "Non-AC Room (1 Night)",  price: 1500, category: "Room Rent" },
   { name: "Deluxe Suite (1 Night)", price: 4500, category: "Room Rent" },
@@ -221,6 +230,7 @@ const MENU_ITEMS = [
   { name: "Samosa",          price: 25,  category: "Snacks" },
   { name: "Chips",           price: 30,  category: "Snacks" },
 ];
+
 const DEFAULT_TAX_PERCENT = 5;
 const BUSINESS_NAME = "Waveshore Beach Resort";
 
@@ -229,11 +239,13 @@ const CATEGORY_ORDER = ['Room Rent', 'Food', 'Drinks', 'Snacks'];
 
 let db = {
   rooms: [], orders: [], customers: {},
+  catalogue: [],
   settings: { businessName: BUSINESS_NAME, taxPercent: DEFAULT_TAX_PERCENT }
 };
 let currentScreen = 'home';
 let currentRoomId = null;
 let currentPhotoData = null;
+let _editingCatIdx = null;
 window._reportRange = window._reportRange || 'today';
 
 // ─────────── persistence ───────────
@@ -246,6 +258,9 @@ function loadDB() {
   db.rooms = db.rooms || [];
   db.orders = db.orders || [];
   db.customers = db.customers || {};
+  if (!Array.isArray(db.catalogue) || db.catalogue.length === 0) {
+    db.catalogue = JSON.parse(JSON.stringify(DEFAULT_CATALOGUE));
+  }
   const headerSpan = document.getElementById('headerLogo');
   if (headerSpan) headerSpan.innerHTML = `<img src="${APP_LOGO}" alt="Logo" style="height:100%;width:100%;object-fit:contain;">`;
 }
@@ -381,10 +396,8 @@ function renderRoom() {
         <button class="btn btn-secondary btn-sm" onclick="openCustomerScreen()">Edit</button>
       </div>
       <div style="font-size:13px;color:var(--text-muted);margin-top:6px">
-        ${customer.idType ? `${esc(customer.idType)}: ${esc(customer.idNumber || '')}<br>` : ''}
         ${customer.phone ? `📞 ${esc(customer.phone)}<br>` : ''}
-        ${customer.dob ? `🎂 ${esc(customer.dob)}<br>` : ''}
-        ${customer.gender ? `⚧ ${esc(customer.gender)}<br>` : ''}
+        ${customer.idNumber ? `🆔 ${esc(customer.idNumber)}<br>` : ''}
         ${customer.address ? `🏠 ${esc(customer.address)}` : ''}
       </div>
       ${customer.photo ? `<img src="${customer.photo}" style="width:100%;max-height:160px;object-fit:contain;margin-top:8px;border-radius:8px;border:1px solid var(--border)" />` : ''}
@@ -413,8 +426,12 @@ function renderRoom() {
             <div class="item-detail">${money(o.price)} × ${o.quantity}</div>
           </div>
           <div class="item-total">${money(o.price * o.quantity)}</div>
-          <button class="icon-btn btn-sm" style="background:#fef2f2;color:var(--danger)"
-            onclick="deleteOrder('${o.id}')">🗑</button>
+          <div class="item-actions">
+            <button class="qty-btn" title="Decrease" onclick="changeOrderQty('${o.id}', -1)">−</button>
+            <button class="qty-btn" title="Increase" onclick="changeOrderQty('${o.id}', 1)">+</button>
+            <button class="icon-btn btn-sm" style="background:#fef2f2;color:var(--danger)"
+              onclick="deleteOrder('${o.id}')">🗑</button>
+          </div>
         </div>`;
       }).join('');
 
@@ -461,16 +478,21 @@ function renderReports() {
     ? `<div class="empty">No paid orders in this period.</div>`
     : paidOrders.slice().reverse().map(o => {
         const room = db.rooms.find(r => r.id === o.roomId);
+        const roomLabel = o.roomName || (room ? room.name : '-');
         const isRent = o.category === "Room Rent";
         return `<div class="item-row">
             <div class="item-info">
               <div class="item-name">${isRent ? '🏠 ' : ''}${esc(o.itemName)} × ${o.quantity}</div>
-              <div class="item-detail">${room ? esc(room.name) : '-'} • ${esc(o.category)} • ${fmtDate(o.paidAt)}</div>
+              <div class="item-detail">${esc(roomLabel)} • ${esc(o.category)} • ${fmtDate(o.paidAt)}</div>
             </div>
             <div class="item-total">${money(o.price * o.quantity)}</div>
           </div>`;
       }).join('');
   return `
+    <div class="flex-space" style="margin-bottom:10px">
+      <div style="font-size:13px;color:var(--text-muted)">View & export settled bills</div>
+      <button class="btn btn-primary btn-sm" onclick="exportSettledBillsPDF()">📄 Export Settled Bills PDF</button>
+    </div>
     <div class="tab-bar">
       ${['today','week','month','year','all'].map(r =>
         `<button class="tab ${r === range ? 'active' : ''}" onclick="window._reportRange='${r}';render()">${r[0].toUpperCase() + r.slice(1)}</button>`).join('')}
@@ -486,10 +508,21 @@ function renderReports() {
       </div>
       <div class="export-btn-row">
         <button class="btn btn-success btn-sm" onclick="exportToExcel()">📥 Download Excel (.xlsx)</button>
+        <button class="btn btn-primary btn-sm" onclick="exportSettledBillsPDF()">📄 Settled Bills PDF (date-wise)</button>
       </div>
       <div style="font-size:12px;color:var(--text-muted);margin-top:8px">
-        Exports the selected date range (${range}) with 3 sheets: Summary, Orders, Customers.
+        Excel: 3 sheets (Summary, Orders, Customers) for the selected range.<br>
+        PDF: every settled bill in the selected range, one bill per page.
       </div>
+    </div>
+
+    <div class="card">
+      <div style="font-weight:600;margin-bottom:8px">📄 Custom Date PDF Export</div>
+      <div class="row">
+        <div class="form-group"><label>From</label><input id="pdfFrom" type="date" value="${ymd(fromMs)}" /></div>
+        <div class="form-group"><label>To</label><input id="pdfTo" type="date" value="${ymd(Date.now())}" /></div>
+      </div>
+      <button class="btn btn-primary" onclick="exportSettledBillsPDF(true)">📄 Export Bills PDF for Date Range</button>
     </div>
     <div class="card">${orderRows}</div>`;
 }
@@ -530,27 +563,392 @@ function exportToExcel() {
     ['Date', 'Time', 'Room/Table', 'Item', 'Category', 'Qty', 'Unit Price (₹)', 'Total (₹)'],
     ...paidOrders.slice().sort((a,b) => a.paidAt - b.paidAt).map(o => {
       const room = db.rooms.find(r => r.id === o.roomId);
+      const roomLabel = o.roomName || (room ? room.name : '-');
       const d = new Date(o.paidAt);
       return [ymd(o.paidAt), d.toLocaleTimeString([], {hour:'2-digit', minute:'2-digit'}),
-        room ? room.name : '-', o.itemName, o.category, o.quantity, o.price, o.price * o.quantity];
+        roomLabel, o.itemName, o.category, o.quantity, o.price, o.price * o.quantity];
     })
   ];
   const wsOrders = XLSX.utils.aoa_to_sheet(orderRowsAOA);
   wsOrders['!cols'] = [{wch:12},{wch:10},{wch:16},{wch:22},{wch:12},{wch:6},{wch:12},{wch:12}];
   XLSX.utils.book_append_sheet(wb, wsOrders, 'Orders');
 
-  const custAOA = [['Room/Table','Name','ID Type','ID Number','Phone','DOB','Gender','Address']];
+  const custAOA = [['Room/Table','Name','ID Number','Phone','Address']];
   Object.entries(db.customers).forEach(([roomId, c]) => {
     const room = db.rooms.find(r => r.id === roomId);
-    custAOA.push([room ? room.name : roomId, c.name || '', c.idType || '', c.idNumber || '', c.phone || '', c.dob || '', c.gender || '', c.address || '']);
+    custAOA.push([room ? room.name : roomId, c.name || '', c.idNumber || '', c.phone || '', c.address || '']);
   });
-  if (custAOA.length === 1) custAOA.push(['(no active customers)', '', '', '', '', '', '', '']);
+  if (custAOA.length === 1) custAOA.push(['(no active customers)', '', '', '', '']);
   const wsCust = XLSX.utils.aoa_to_sheet(custAOA);
-  wsCust['!cols'] = [{wch:16},{wch:20},{wch:14},{wch:18},{wch:14},{wch:12},{wch:10},{wch:30}];
+  wsCust['!cols'] = [{wch:16},{wch:20},{wch:18},{wch:14},{wch:30}];
   XLSX.utils.book_append_sheet(wb, wsCust, 'Customers');
 
   XLSX.writeFile(wb, `waveshore-records-${range}-${ymd(Date.now())}.xlsx`);
   toast('Excel file downloaded');
+}
+
+// ═══════════════════ SETTLED BILLS → PDF (date-wise) ═══════════════════
+// Helper to avoid Unicode issues in jsPDF
+function pdfMoney(n) { return 'Rs. ' + (Math.round(n * 100) / 100).toFixed(2); }
+function cleanText(str) { 
+  if (!str) return '';
+  // Remove emojis and special symbols for the PDF
+  return String(str).replace(/[^\x20-\x7E]/g, '').trim(); 
+}
+
+async function exportSettledBillsPDF(useCustomRange) {
+  if (!window.jspdf || !window.jspdf.jsPDF) {
+    toast('PDF library not loaded'); return;
+  }
+  const { jsPDF } = window.jspdf;
+
+  let fromMs, toMs;
+  if (useCustomRange) {
+    const f = document.getElementById('pdfFrom').value;
+    const t = document.getElementById('pdfTo').value;
+    if (!f || !t) { toast('Pick both dates'); return; }
+    fromMs = new Date(f + 'T00:00:00').getTime();
+    toMs   = new Date(t + 'T23:59:59').getTime();
+    if (fromMs > toMs) { toast('From date must be before To date'); return; }
+  } else {
+    const r = getReportRange();
+    fromMs = r.fromMs; toMs = r.toMs;
+  }
+
+  const settled = db.orders.filter(o => o.paid && o.paidAt >= fromMs && o.paidAt <= toMs);
+  if (!settled.length) { toast('No settled bills in this range'); return; }
+
+  const billsMap = {};
+  settled.forEach(o => {
+    const key = o.roomId + '|' + o.paidAt;
+    if (!billsMap[key]) {
+      const room = db.rooms.find(r => r.id === o.roomId);
+      billsMap[key] = {
+        roomId: o.roomId,
+        roomName: o.roomName || (room ? room.name : '-'),
+        paidAt: o.paidAt,
+        customer: o.customerSnapshot || null,
+        snapshot: o.billSnapshot || null,
+        items: []
+      };
+    }
+    billsMap[key].items.push(o);
+  });
+
+  const bills = Object.values(billsMap).sort((a, b) => a.paidAt - b.paidAt);
+
+  const doc = new jsPDF({ unit: 'pt', format: 'a4' });
+  const PAGE_W = doc.internal.pageSize.getWidth();
+  const PAGE_H = doc.internal.pageSize.getHeight();
+  const MARGIN = 40;
+  const CONTENT_W = PAGE_W - MARGIN * 2;
+
+  const colors = {
+    primary: [19, 59, 92],
+    accent:  [212, 163, 83],
+    text:    [30, 41, 59],
+    muted:   [100, 116, 139],
+    line:    [203, 213, 225],
+    success: [22, 163, 74]
+  };
+
+  drawPdfCover(doc, bills, fromMs, toMs, PAGE_W, PAGE_H, MARGIN, colors);
+  
+  bills.forEach(bill => {
+    doc.addPage();
+    drawPdfBill(doc, bill, PAGE_W, PAGE_H, MARGIN, CONTENT_W, colors);
+  });
+
+  const fromStr = ymd(fromMs);
+  const toStr = ymd(toMs);
+  doc.save(`waveshore-settled-bills-${fromStr}_to_${toStr}.pdf`);
+  toast(`PDF exported — ${bills.length} bill(s)`);
+}
+
+function drawPdfCover(doc, bills, fromMs, toMs, PAGE_W, PAGE_H, MARGIN, colors) {
+  let y = MARGIN;
+
+  doc.setFillColor(...colors.primary);
+  doc.rect(0, 0, PAGE_W, 90, 'F');
+  doc.setFillColor(...colors.accent);
+  doc.rect(0, 90, PAGE_W, 4, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(20);
+  doc.text(db.settings.businessName || BUSINESS_NAME, PAGE_W / 2, 44, { align: 'center' });
+  doc.setFontSize(11);
+  doc.setTextColor(...colors.accent);
+  doc.text('SETTLED BILLS REPORT', PAGE_W / 2, 66, { align: 'center' });
+
+  y = 130;
+  doc.setFontSize(12);
+  doc.setFont('helvetica', 'bold');
+  doc.setTextColor(...colors.text);
+  doc.text('Date Range', MARGIN, y);
+  y += 18;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.text(`${fmtDate(fromMs)}  to  ${fmtDate(toMs)}`, MARGIN, y);
+
+  const totalRevenue = bills.reduce((s, b) => {
+    if (b.snapshot) return s + b.snapshot.grandTotal;
+    return s + b.items.reduce((t, o) => t + o.price * o.quantity, 0);
+  }, 0);
+
+  y += 30;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('Summary', MARGIN, y);
+  y += 18;
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(11);
+  doc.text(`Total Bills: ${bills.length}`, MARGIN, y);
+  y += 16;
+  doc.text(`Total Revenue: ${pdfMoney(totalRevenue)}`, MARGIN, y);
+
+  y += 34;
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.setTextColor(...colors.primary);
+  doc.text('Bills Included', MARGIN, y);
+  y += 8;
+  doc.setDrawColor(...colors.accent);
+  doc.setLineWidth(1);
+  doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+  y += 16;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.text);
+
+  const ROW = 15;
+  const COL_NO = MARGIN;
+  const COL_DATE = MARGIN + 40;
+  const COL_ROOM = MARGIN + 180;
+  const COL_CUST = MARGIN + 320;
+  const COL_TOTAL = PAGE_W - MARGIN;
+
+  doc.setFont('helvetica', 'bold');
+  doc.text('#', COL_NO, y);
+  doc.text('Date', COL_DATE, y);
+  doc.text('Room / Table', COL_ROOM, y);
+  doc.text('Customer', COL_CUST, y);
+  doc.text('Total', COL_TOTAL, y, { align: 'right' });
+  y += 6;
+  doc.setDrawColor(...colors.line);
+  doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+  y += 14;
+  doc.setFont('helvetica', 'normal');
+
+  bills.forEach((b, i) => {
+    if (y > PAGE_H - 60) {
+      doc.addPage();
+      y = MARGIN;
+    }
+    const total = b.snapshot ? b.snapshot.grandTotal
+                             : b.items.reduce((s, o) => s + o.price * o.quantity, 0);
+    doc.text(String(i + 1), COL_NO, y);
+    doc.text(fmtDate(b.paidAt), COL_DATE, y);
+    doc.text(cleanText(b.roomName), COL_ROOM, y);
+    doc.text(cleanText((b.customer && b.customer.name) || '-'), COL_CUST, y);
+    doc.text(pdfMoney(total), COL_TOTAL, y, { align: 'right' });
+    y += ROW;
+  });
+}
+
+function drawPdfBill(doc, bill, PAGE_W, PAGE_H, MARGIN, CONTENT_W, colors) {
+  const PAGE_BOTTOM = PAGE_H - MARGIN;
+  let y = 0;
+
+  doc.setFillColor(...colors.primary);
+  doc.rect(0, 0, PAGE_W, 80, 'F');
+  doc.setFillColor(...colors.accent);
+  doc.rect(0, 80, PAGE_W, 3, 'F');
+
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(16);
+  doc.text(db.settings.businessName || BUSINESS_NAME, PAGE_W / 2, 34, { align: 'center' });
+  doc.setFontSize(10);
+  doc.setTextColor(...colors.accent);
+  doc.text('TAX INVOICE', PAGE_W / 2, 54, { align: 'center' });
+  doc.setFontSize(9);
+  doc.setTextColor(220, 220, 220);
+  doc.text(`Settled on ${fmtDate(bill.paidAt)}`, PAGE_W / 2, 70, { align: 'center' });
+
+  y = 105;
+  doc.setTextColor(...colors.text);
+
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(13);
+  doc.setTextColor(...colors.primary);
+  doc.text(`Bill - ${cleanText(bill.roomName)}`, MARGIN, y);
+  y += 18;
+
+  doc.setFont('helvetica', 'normal');
+  doc.setFontSize(9);
+  doc.setTextColor(...colors.muted);
+  doc.text(`Invoice No: INV-${ymd(bill.paidAt).replace(/-/g,'')}-${String(bill.paidAt).slice(-4)}`, MARGIN, y);
+  y += 12;
+  doc.text(`Date: ${fmtDate(bill.paidAt)}`, MARGIN, y);
+
+  if (bill.customer) {
+    y += 12;
+    doc.setTextColor(...colors.text);
+    doc.setFont('helvetica', 'bold');
+    doc.text(`Customer: ${cleanText(bill.customer.name) || '-'}`, MARGIN, y);
+    doc.setFont('helvetica', 'normal');
+    if (bill.customer.phone) { y += 12; doc.text(`Phone: ${cleanText(bill.customer.phone)}`, MARGIN, y); }
+    if (bill.customer.idNumber) { y += 12; doc.text(`ID: ${cleanText(bill.customer.idNumber)}`, MARGIN, y); }
+    if (bill.customer.address) {
+      y += 12;
+      const addr = doc.splitTextToSize(`Address: ${cleanText(bill.customer.address)}`, CONTENT_W);
+      doc.text(addr, MARGIN, y);
+      y += (addr.length - 1) * 12;
+    }
+  }
+
+  y += 16;
+  doc.setDrawColor(...colors.primary);
+  doc.setLineWidth(1);
+  doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+  y += 16;
+
+  const groups = {};
+  bill.items.forEach(o => {
+    const cat = o.category || 'Other';
+    if (!groups[cat]) groups[cat] = { items: [], subtotal: 0 };
+    groups[cat].items.push(o);
+    groups[cat].subtotal += o.price * o.quantity;
+  });
+  const catOrder = CATEGORY_ORDER.filter(c => groups[c])
+    .concat(Object.keys(groups).filter(c => !CATEGORY_ORDER.includes(c)));
+
+  const COL_ITEM = MARGIN + 4;
+  const COL_QTY = PAGE_W - MARGIN - 220;
+  const COL_PRICE = PAGE_W - MARGIN - 130;
+  const COL_TOTAL = PAGE_W - MARGIN;
+
+  const ROW = 14;
+
+  catOrder.forEach(cat => {
+    const g = groups[cat];
+
+    if (y > PAGE_BOTTOM - 60) {
+      doc.addPage();
+      y = MARGIN;
+    }
+    doc.setFillColor(238, 242, 247);
+    doc.rect(MARGIN, y - 10, CONTENT_W, 18, 'F');
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(10);
+    
+    // Clean up emojis from category names
+    doc.text(cleanText(cat), COL_ITEM, y + 2);
+    y += 16;
+
+    doc.setTextColor(...colors.muted);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(8);
+    doc.text('ITEM', COL_ITEM, y);
+    doc.text('QTY', COL_QTY, y, { align: 'center' });
+    doc.text('PRICE', COL_PRICE, y, { align: 'right' });
+    doc.text('TOTAL', COL_TOTAL, y, { align: 'right' });
+    y += 6;
+    doc.setDrawColor(...colors.line);
+    doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+    y += 12;
+
+    doc.setTextColor(...colors.text);
+    doc.setFont('helvetica', 'normal');
+    doc.setFontSize(9);
+    g.items.forEach(o => {
+      if (y > PAGE_BOTTOM - 40) {
+        doc.addPage();
+        y = MARGIN;
+      }
+      doc.text(cleanText(o.itemName), COL_ITEM, y);
+      doc.text(String(o.quantity), COL_QTY, y, { align: 'center' });
+      doc.text(pdfMoney(o.price), COL_PRICE, y, { align: 'right' });
+      doc.text(pdfMoney(o.price * o.quantity), COL_TOTAL, y, { align: 'right' });
+      y += ROW;
+    });
+
+    doc.setDrawColor(...colors.primary);
+    doc.setLineWidth(0.5);
+    doc.line(MARGIN, y - 6, PAGE_W - MARGIN, y - 6);
+    doc.setTextColor(...colors.primary);
+    doc.setFont('helvetica', 'bold');
+    doc.setFontSize(9);
+    doc.text(`${cleanText(cat)} Subtotal`, COL_ITEM, y + 4);
+    doc.text(pdfMoney(g.subtotal), COL_TOTAL, y + 4, { align: 'right' });
+    y += 20;
+  });
+
+  if (y > PAGE_BOTTOM - 110) {
+    doc.addPage();
+    y = MARGIN;
+  }
+  y += 6;
+  doc.setDrawColor(...colors.primary);
+  doc.setLineWidth(1);
+  doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+  y += 18;
+
+  const snap = bill.snapshot || {
+    subtotal: bill.items.reduce((s, o) => s + o.price * o.quantity, 0),
+    discountAmount: 0,
+    taxAmount: 0,
+    grandTotal: bill.items.reduce((s, o) => s + o.price * o.quantity, 0),
+    taxPercent: 0
+  };
+
+  const labelX = PAGE_W - MARGIN - 220;
+  const valX = PAGE_W - MARGIN;
+  doc.setFontSize(10);
+
+  doc.setTextColor(...colors.text);
+  doc.setFont('helvetica', 'normal');
+  doc.text('Subtotal', labelX, y);
+  doc.text(pdfMoney(snap.subtotal), valX, y, { align: 'right' });
+  y += 14;
+
+  if (snap.discountAmount > 0) {
+    doc.setTextColor(...colors.success);
+    doc.text('Discount', labelX, y);
+    doc.text('-' + pdfMoney(snap.discountAmount), valX, y, { align: 'right' });
+    y += 14;
+    doc.setTextColor(...colors.text);
+  }
+  if (snap.taxAmount > 0) {
+    doc.text(`Tax (${snap.taxPercent}%)`, labelX, y);
+    doc.text(pdfMoney(snap.taxAmount), valX, y, { align: 'right' });
+    y += 14;
+  }
+
+  const bandX = labelX - 10;
+  const bandW = valX - bandX + 10;
+  const bandH = 28;
+  doc.setFillColor(...colors.primary);
+  doc.roundedRect(bandX, y - 6, bandW, bandH, 4, 4, 'F');
+  doc.setTextColor(255, 255, 255);
+  doc.setFont('helvetica', 'bold');
+  doc.setFontSize(12);
+  doc.text('TOTAL', bandX + 10, y + 12);
+  doc.setFontSize(13);
+  doc.text(pdfMoney(snap.grandTotal), valX - 6, y + 12, { align: 'right' });
+
+  y += bandH + 20;
+  doc.setDrawColor(...colors.line);
+  doc.setLineWidth(0.5);
+  doc.line(MARGIN, y, PAGE_W - MARGIN, y);
+  y += 14;
+  doc.setTextColor(...colors.muted);
+  doc.setFont('helvetica', 'italic');
+  doc.setFontSize(9);
+  doc.text('Thank you for visiting!', PAGE_W / 2, y, { align: 'center' });
 }
 
 // ─────────── modals ───────────
@@ -561,6 +959,7 @@ function openModal(html) {
 function closeModal() {
   document.getElementById('modalBackdrop').classList.remove('show');
   document.getElementById('modalContent').innerHTML = '';
+  _editingCatIdx = null;
 }
 
 // ─────────── rooms CRUD ───────────
@@ -623,59 +1022,306 @@ function saveRoomSettings() {
 
 // ─────────── orders ───────────
 function openAddItemModal() {
-  const cats = [...new Set(MENU_ITEMS.map(i => i.category))];
-  const grouped = cats.map(cat => {
-    const items = MENU_ITEMS.map((it, i) => ({ ...it, idx: i })).filter(it => it.category === cat);
+  const catalogue = db.catalogue || [];
+  const catsInOrder = [...CATEGORY_ORDER,
+    ...new Set(catalogue.map(i => i.category).filter(c => !CATEGORY_ORDER.includes(c)))];
+
+  const groupedHtml = catsInOrder.map(cat => {
+    const items = catalogue
+      .map((it, i) => ({ ...it, idx: i }))
+      .filter(it => it.category === cat);
+    if (items.length === 0) return '';
     return `
       <div style="margin-bottom:8px">
         <div style="font-size:12px;font-weight:600;color:var(--text-muted);margin-bottom:4px">
-          ${CATEGORY_ICON[cat] || ''} ${esc(cat)}
+          ${CATEGORY_ICON[cat] || '📦'} ${esc(cat)}
         </div>
         <div class="chip-row" style="margin-top:0">
-          ${items.map(it => `<span class="chip ${cat==='Room Rent'?'cat-chip':''}" onclick="pickItem(${it.idx})">${esc(it.name)} · ${money(it.price)}</span>`).join('')}
+          ${items.map(it => `<span class="chip ${cat==='Room Rent'?'cat-chip':''}" onclick="pickCatalogueItem(${it.idx})">${esc(it.name)} · ${money(it.price)}</span>`).join('')}
         </div>
       </div>`;
   }).join('');
+
+  const allCats = [...new Set([...CATEGORY_ORDER, ...catalogue.map(i => i.category)])];
+
   openModal(`
     <h2>Add Item</h2>
-    <div class="form-group"><label>Quick pick</label>${grouped}</div>
+
+    <div class="flex-space" style="margin-bottom:8px">
+      <label style="margin:0">Quick pick (from catalogue)</label>
+      <button class="btn btn-secondary btn-sm" onclick="openCatalogueModal()">✏️ Manage Catalogue</button>
+    </div>
+
+    ${groupedHtml || `<div class="info-box">Your catalogue is empty. Tap <b>Manage Catalogue</b> to add items.</div>`}
+
+    <hr style="border:none;border-top:1px dashed var(--border);margin:14px 0">
+
     <div class="form-group"><label>Item Name</label><input id="itName" /></div>
     <div class="row">
       <div class="form-group"><label>Price (₹)</label><input id="itPrice" type="number" min="0" step="1" /></div>
       <div class="form-group"><label>Qty</label><input id="itQty" type="number" min="1" value="1" /></div>
     </div>
     <div class="form-group"><label>Category</label>
-      <select id="itCat">${cats.map(c => `<option>${c}</option>`).join('')}</select>
+      <select id="itCat">${allCats.map(c => `<option>${c}</option>`).join('')}</select>
     </div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
       <button class="btn btn-primary" onclick="addOrderItem()">Add</button>
     </div>`);
 }
-function pickItem(i) {
-  const it = MENU_ITEMS[i];
+
+function pickCatalogueItem(idx) {
+  const it = db.catalogue[idx];
+  if (!it) return;
   document.getElementById('itName').value = it.name;
   document.getElementById('itPrice').value = it.price;
   document.getElementById('itQty').value = 1;
   const sel = document.getElementById('itCat');
   if ([...sel.options].some(o => o.value === it.category)) sel.value = it.category;
 }
+
 function addOrderItem() {
   const name = document.getElementById('itName').value.trim();
   const price = parseFloat(document.getElementById('itPrice').value);
   const qty = parseInt(document.getElementById('itQty').value) || 1;
   const cat = document.getElementById('itCat').value;
   if (!name || isNaN(price)) { toast('Enter item name and price'); return; }
-  db.orders.push({ id: uid(), roomId: currentRoomId, itemName: name, price, quantity: qty, category: cat, paid: false, createdAt: Date.now() });
-  saveDB(); closeModal(); render(); toast('Item added');
+
+  const existing = db.orders.find(o =>
+    o.roomId === currentRoomId &&
+    !o.paid &&
+    o.itemName.trim().toLowerCase() === name.toLowerCase() &&
+    o.category === cat &&
+    Number(o.price) === Number(price)
+  );
+
+  if (existing) {
+    existing.quantity += qty;
+  } else {
+    db.orders.push({
+      id: uid(),
+      roomId: currentRoomId,
+      itemName: name,
+      price,
+      quantity: qty,
+      category: cat,
+      paid: false,
+      createdAt: Date.now()
+    });
+  }
+
+  saveDB();
+  closeModal();
+  render();
+  toast(existing ? `${name} × ${existing.quantity} in bill` : 'Item added');
 }
+
 function deleteOrder(id) {
   if (!confirm('Remove this item?')) return;
   db.orders = db.orders.filter(o => o.id !== id);
   saveDB(); render();
 }
 
-// ─────────── customer + OCR ───────────
+function changeOrderQty(orderId, delta) {
+  const order = db.orders.find(o => o.id === orderId);
+  if (!order) return;
+  order.quantity += delta;
+  if (order.quantity <= 0) {
+    db.orders = db.orders.filter(o => o.id !== orderId);
+  }
+  saveDB();
+  render();
+}
+
+// ═══════════════════ CATALOGUE MANAGER (add + edit + delete) ═══════════════════
+function openCatalogueModal() {
+  _editingCatIdx = null;
+  renderCatalogueModal();
+}
+
+function renderCatalogueModal() {
+  const cats = [...new Set([...CATEGORY_ORDER, ...db.catalogue.map(i => i.category)])];
+
+  const blocks = cats.map(cat => {
+    const items = db.catalogue
+      .map((it, i) => ({ ...it, idx: i }))
+      .filter(it => it.category === cat);
+    return `
+      <div class="cat-block">
+        <div class="cat-header">${CATEGORY_ICON[cat] || '📦'} ${esc(cat)} <span style="font-weight:400;font-size:11px;opacity:.7">(${items.length})</span></div>
+        ${items.length === 0 ? `<div style="font-size:12px;color:var(--text-muted);padding:4px 0">No items in this category yet.</div>` :
+          items.map(it => {
+            const isEditing = _editingCatIdx === it.idx;
+            if (isEditing) {
+              return `
+                <div class="edit-row">
+                  <div class="row">
+                    <div class="form-group" style="flex:2;margin:0">
+                      <label style="font-size:11px">Name</label>
+                      <input id="editCatName" value="${esc(it.name)}" />
+                    </div>
+                    <div class="form-group" style="margin:0">
+                      <label style="font-size:11px">Price (₹)</label>
+                      <input id="editCatPrice" type="number" min="0" step="1" value="${it.price}" />
+                    </div>
+                  </div>
+                  <div class="form-group" style="margin:8px 0 0">
+                    <label style="font-size:11px">Category</label>
+                    <select id="editCatCategory">
+                      ${cats.map(c => `<option value="${esc(c)}" ${c === it.category ? 'selected' : ''}>${esc(c)}</option>`).join('')}
+                      <option value="__new__">＋ New category…</option>
+                    </select>
+                  </div>
+                  <div class="form-group" id="editNewCatWrap" style="display:none;margin:8px 0 0">
+                    <label style="font-size:11px">New Category Name</label>
+                    <input id="editCatNewName" placeholder="e.g. Desserts" />
+                  </div>
+                  <div style="display:flex;gap:6px;justify-content:flex-end;margin-top:8px">
+                    <button class="btn btn-secondary btn-sm" onclick="cancelCatalogueEdit()">Cancel</button>
+                    <button class="btn btn-primary btn-sm" onclick="saveCatalogueEdit(${it.idx})">Save</button>
+                  </div>
+                </div>`;
+            }
+            return `
+              <div class="item-row" style="padding:6px 0">
+                <div class="item-info">
+                  <div class="item-name" style="font-size:14px">${esc(it.name)}</div>
+                  <div class="item-detail">${money(it.price)}</div>
+                </div>
+                <button class="icon-btn btn-sm" style="background:#eff6ff;color:var(--primary)"
+                  title="Edit" onclick="startCatalogueEdit(${it.idx})">✏️</button>
+                <button class="icon-btn btn-sm" style="background:#fef2f2;color:var(--danger)"
+                  title="Delete" onclick="deleteCatalogueItem(${it.idx})">🗑</button>
+              </div>`;
+          }).join('')}
+      </div>`;
+  }).join('');
+
+  openModal(`
+    <h2>📚 Manage Catalogue</h2>
+    <div class="info-box">
+      Items here appear in <b>Quick pick</b> when adding items to a room. Tap <b>✏️</b> to edit an item, <b>🗑</b> to remove it.
+    </div>
+
+    ${blocks}
+
+    <hr style="border:none;border-top:1px dashed var(--border);margin:14px 0">
+
+    <div style="font-weight:700;font-size:14px;color:var(--primary);margin-bottom:8px">➕ Add New Catalogue Item</div>
+    <div class="row">
+      <div class="form-group" style="flex:2"><label>Item Name</label><input id="catName" placeholder="e.g. Paneer Tikka" /></div>
+      <div class="form-group"><label>Price (₹)</label><input id="catPrice" type="number" min="0" step="1" /></div>
+    </div>
+    <div class="form-group"><label>Category</label>
+      <select id="catCategory">
+        ${cats.map(c => `<option>${esc(c)}</option>`).join('')}
+        <option value="__new__">＋ New category…</option>
+      </select>
+    </div>
+    <div class="form-group" id="newCatWrap" style="display:none">
+      <label>New Category Name</label>
+      <input id="catNewName" placeholder="e.g. Desserts" />
+    </div>
+
+    <div class="modal-actions">
+      <button class="btn btn-secondary" onclick="closeModal()">Close</button>
+      <button class="btn btn-primary" onclick="saveCatalogueItem()">Save Item</button>
+    </div>`);
+
+  setTimeout(() => {
+    const sel = document.getElementById('catCategory');
+    const wrap = document.getElementById('newCatWrap');
+    if (sel && wrap) {
+      sel.addEventListener('change', () => {
+        wrap.style.display = sel.value === '__new__' ? 'block' : 'none';
+      });
+    }
+    const editSel = document.getElementById('editCatCategory');
+    const editWrap = document.getElementById('editNewCatWrap');
+    if (editSel && editWrap) {
+      editSel.addEventListener('change', () => {
+        editWrap.style.display = editSel.value === '__new__' ? 'block' : 'none';
+      });
+    }
+  }, 50);
+}
+
+function startCatalogueEdit(idx) {
+  _editingCatIdx = idx;
+  renderCatalogueModal();
+}
+
+function cancelCatalogueEdit() {
+  _editingCatIdx = null;
+  renderCatalogueModal();
+}
+
+function saveCatalogueEdit(idx) {
+  const item = db.catalogue[idx];
+  if (!item) return;
+
+  const name = document.getElementById('editCatName').value.trim();
+  const price = parseFloat(document.getElementById('editCatPrice').value);
+  let cat = document.getElementById('editCatCategory').value;
+
+  if (cat === '__new__') {
+    cat = document.getElementById('editCatNewName').value.trim();
+    if (!cat) { toast('Enter a category name'); return; }
+  }
+  if (!name) { toast('Enter an item name'); return; }
+  if (isNaN(price) || price < 0) { toast('Enter a valid price'); return; }
+
+  const dup = db.catalogue.find((i, i2) =>
+    i2 !== idx &&
+    i.name.trim().toLowerCase() === name.toLowerCase() &&
+    i.category.toLowerCase() === cat.toLowerCase()
+  );
+  if (dup) { toast('Another item with this name already exists in this category'); return; }
+
+  item.name = name;
+  item.price = price;
+  item.category = cat;
+
+  saveDB();
+  _editingCatIdx = null;
+  toast('Item updated');
+  renderCatalogueModal();
+}
+
+function saveCatalogueItem() {
+  const name = document.getElementById('catName').value.trim();
+  const price = parseFloat(document.getElementById('catPrice').value);
+  let cat = document.getElementById('catCategory').value;
+
+  if (cat === '__new__') {
+    cat = document.getElementById('catNewName').value.trim();
+    if (!cat) { toast('Enter a category name'); return; }
+  }
+  if (!name) { toast('Enter an item name'); return; }
+  if (isNaN(price) || price < 0) { toast('Enter a valid price'); return; }
+
+  const dup = db.catalogue.find(i =>
+    i.name.trim().toLowerCase() === name.toLowerCase() &&
+    i.category.toLowerCase() === cat.toLowerCase()
+  );
+  if (dup) { toast('Item already exists in this category'); return; }
+
+  db.catalogue.push({ name, price, category: cat });
+  saveDB();
+  toast('Item saved to catalogue');
+  renderCatalogueModal();
+}
+
+function deleteCatalogueItem(idx) {
+  if (!confirm('Remove this item from the catalogue?')) return;
+  db.catalogue.splice(idx, 1);
+  saveDB();
+  _editingCatIdx = null;
+  renderCatalogueModal();
+  toast('Item deleted');
+}
+
+// ─────────── customer + OCR (SIMPLIFIED) ───────────
 function openCustomerScreen() {
   const room = db.rooms.find(r => r.id === currentRoomId);
   if (!room) return;
@@ -684,7 +1330,7 @@ function openCustomerScreen() {
   openModal(`
     <h2>🆔 Customer Details — ${esc(room.name)}</h2>
     <div class="form-group">
-      <label>ID Proof Photo (auto-extracts details)</label>
+      <label>ID Proof Photo (auto-fills Name, ID Number, Address)</label>
       <div id="photoArea">
         ${cust.photo ? `
           <div class="photo-preview" id="photoPreview">
@@ -702,24 +1348,9 @@ function openCustomerScreen() {
       </div>
       <div id="ocrStatus"></div>
     </div>
-    <div class="form-group"><label>ID Type</label>
-      <select id="custIdType">
-        ${['Aadhaar','PAN','Driving License','Passport','Voter ID','Other'].map(t =>
-          `<option ${cust.idType === t ? 'selected' : ''}>${t}</option>`).join('')}
-      </select>
-    </div>
-    <div class="form-group"><label>ID Number</label><input id="custIdNumber" value="${esc(cust.idNumber || '')}" placeholder="Auto-filled" /></div>
     <div class="form-group"><label>Full Name</label><input id="custName" value="${esc(cust.name || '')}" placeholder="Auto-filled" /></div>
-    <div class="form-group"><label>Phone (WhatsApp)</label><input id="custPhone" value="${esc(cust.phone || '')}" placeholder="e.g. 9876543210" /></div>
-    <div class="row">
-      <div class="form-group"><label>Date of Birth</label><input id="custDob" type="date" value="${esc(cust.dob || '')}" /></div>
-      <div class="form-group"><label>Gender</label>
-        <select id="custGender">
-          <option value="">-</option>
-          ${['Male','Female','Other'].map(g => `<option ${cust.gender === g ? 'selected' : ''}>${g}</option>`).join('')}
-        </select>
-      </div>
-    </div>
+    <div class="form-group"><label>Contact Number (WhatsApp)</label><input id="custPhone" value="${esc(cust.phone || '')}" placeholder="e.g. 9876543210" /></div>
+    <div class="form-group"><label>ID Number</label><input id="custIdNumber" value="${esc(cust.idNumber || '')}" placeholder="Auto-filled" /></div>
     <div class="form-group"><label>Address</label><textarea id="custAddress" rows="2">${esc(cust.address || '')}</textarea></div>
     <div class="modal-actions">
       <button class="btn btn-secondary" onclick="closeModal()">Cancel</button>
@@ -778,26 +1409,14 @@ async function runOCR(dataUrl) {
 }
 function parseOCRText(text) {
   const t = text.replace(/\s+/g, ' ');
+
   const aadhaar = t.match(/\b(\d{4}\s?\d{4}\s?\d{4})\b/);
   if (aadhaar) {
     document.getElementById('custIdNumber').value = aadhaar[1].replace(/\s/g, '');
-    document.getElementById('custIdType').value = 'Aadhaar';
   }
   const pan = t.match(/\b([A-Z]{5}\d{4}[A-Z])\b/);
   if (pan) {
     document.getElementById('custIdNumber').value = pan[1];
-    document.getElementById('custIdType').value = 'PAN';
-  }
-  const dob = t.match(/\b(\d{2}[\/\-]\d{2}[\/\-]\d{4})\b/);
-  if (dob) {
-    const parts = dob[1].split(/[\/\-]/);
-    document.getElementById('custDob').value = parts[2] + '-' + parts[1] + '-' + parts[0];
-  }
-  if (/\b(male|female|other)\b/i.test(t)) {
-    const m = t.match(/\b(male|female|other)\b/i)[1];
-    const g = m[0].toUpperCase() + m.slice(1).toLowerCase();
-    const sel = document.getElementById('custGender');
-    if ([...sel.options].some(o => o.value === g)) sel.value = g;
   }
   const nameMatch = t.match(/(?:name[:\s]+)([A-Z][a-zA-Z]+(?:\s+[A-Z][a-zA-Z]+){0,3})/i);
   if (nameMatch && !document.getElementById('custName').value) {
@@ -807,20 +1426,24 @@ function parseOCRText(text) {
   if (phone && !document.getElementById('custPhone').value) {
     document.getElementById('custPhone').value = phone[1];
   }
+  const addrMatch = t.match(/(?:address[:\s]+)([A-Za-z0-9 ,.\-\/]{10,120})/i);
+  if (addrMatch && !document.getElementById('custAddress').value) {
+    document.getElementById('custAddress').value = addrMatch[1].trim();
+  }
 }
 function saveCustomer() {
   const roomId = currentRoomId;
   const cust = {
     name: document.getElementById('custName').value.trim(),
-    idType: document.getElementById('custIdType').value,
-    idNumber: document.getElementById('custIdNumber').value.trim(),
     phone: document.getElementById('custPhone').value.trim(),
-    dob: document.getElementById('custDob').value,
-    gender: document.getElementById('custGender').value,
+    idNumber: document.getElementById('custIdNumber').value.trim(),
     address: document.getElementById('custAddress').value.trim(),
     photo: currentPhotoData || null
   };
-  if (!cust.name && !cust.idNumber && !cust.photo) { toast('Enter at least a name or ID'); return; }
+  if (!cust.name && !cust.idNumber && !cust.phone && !cust.photo) {
+    toast('Enter at least a name, ID, or phone');
+    return;
+  }
   db.customers[roomId] = cust;
   saveDB(); closeModal(); render(); toast('Customer saved');
 }
@@ -891,7 +1514,7 @@ function openBillModal() {
     </div>`);
 }
 
-// ═══════════════════ 1) OPEN WHATSAPP CHAT WITH TEXT BILL ═══════════════════
+// ═══════════════════ WHATSAPP HELPERS ═══════════════════
 function openWhatsAppChat(roomId) {
   const room = db.rooms.find(r => r.id === roomId);
   if (!room) return;
@@ -924,7 +1547,6 @@ function openWhatsAppChat(roomId) {
   toast('Opening WhatsApp chat with bill text…');
 }
 
-// ═══════════════════ 2) SEND BILL IMAGE TO CUSTOMER (download + open chat) ═══════════════════
 async function sendBillImageToCustomer(roomId) {
   const room = db.rooms.find(r => r.id === roomId);
   if (!room) return;
@@ -937,10 +1559,8 @@ async function sendBillImageToCustomer(roomId) {
   const blob = await buildBillImageBlob(roomId);
   const filename = `Bill-${room.name.replace(/\s+/g,'_')}-${ymd(Date.now())}.png`;
 
-  // Download image to device (so it appears in gallery for attaching)
   downloadBlob(blob, filename);
 
-  // Open customer's chat with a caption
   const bill = computeBill(room, orders);
   const caption =
     `*${db.settings.businessName || BUSINESS_NAME}*\n` +
@@ -948,7 +1568,6 @@ async function sendBillImageToCustomer(roomId) {
     `*TOTAL: ${money(bill.grandTotal)}*\n\n` +
     `Bill image saved to gallery. Please attach it in the next message. 🙏`;
 
-  // Small delay so the download toast/notification doesn't block the tab open
   setTimeout(() => {
     window.open(`https://wa.me/${phone}?text=${encodeURIComponent(caption)}`, '_blank');
   }, 400);
@@ -956,7 +1575,6 @@ async function sendBillImageToCustomer(roomId) {
   toast('Image downloaded — attach it in the chat that opens');
 }
 
-// ═══════════════════ 3) SHARE BILL IMAGE (native share) ═══════════════════
 async function shareBillImage(roomId) {
   const room = db.rooms.find(r => r.id === roomId);
   if (!room) return;
@@ -985,7 +1603,6 @@ async function shareBillImage(roomId) {
     }
   }
 
-  // Fallback: download + open customer chat
   downloadBlob(blob, filename);
   const phone = normalizePhone(db.customers[roomId] && db.customers[roomId].phone);
   if (phone) {
@@ -994,7 +1611,6 @@ async function shareBillImage(roomId) {
   toast('Image downloaded — attach it in the WhatsApp chat');
 }
 
-// ═══════════════════ 4) DOWNLOAD BILL IMAGE ONLY ═══════════════════
 async function downloadBillImage(roomId) {
   const room = db.rooms.find(r => r.id === roomId);
   if (!room) return;
@@ -1021,8 +1637,7 @@ async function buildBillImageBlob(roomId) {
   const groups = groupOrdersByCategory(orders);
   const now = new Date();
 
-  // ─── Layout constants ───
-  const W = 900;                    // canvas width (px)
+  const W = 900;
   const PAD = 40;
   const COL_ITEM = PAD;
   const COL_QTY = W - PAD - 260;
@@ -1034,45 +1649,39 @@ async function buildBillImageBlob(roomId) {
   const SUBTOTAL_H = 36;
   const GAP = 16;
 
-  // ─── Measure height ───
   let contentHeight = 0;
-  contentHeight += 130;             // header bar
-  contentHeight += 130;             // room info block
-  contentHeight += 40;              // column header
+  contentHeight += 130;
+  contentHeight += 130;
+  contentHeight += 40;
   groups.forEach(g => {
     contentHeight += CAT_HEADER_H;
-    contentHeight += 34;            // per-category col header row
+    contentHeight += 34;
     contentHeight += g.items.length * LINE;
     contentHeight += SUBTOTAL_H;
     contentHeight += GAP;
   });
-  contentHeight += 200;             // grand totals block
-  contentHeight += 80;              // footer
+  contentHeight += 200;
+  contentHeight += 80;
 
   const H = Math.max(700, contentHeight);
 
-  // ─── Create canvas ───
   const canvas = document.createElement('canvas');
   canvas.width = W;
   canvas.height = H;
   const ctx = canvas.getContext('2d');
 
-  // ─── Background ───
   ctx.fillStyle = '#ffffff';
   ctx.fillRect(0, 0, W, H);
 
-  // ─── Top header bar ───
   const grad = ctx.createLinearGradient(0, 0, W, 100);
   grad.addColorStop(0, '#133b5c');
   grad.addColorStop(1, '#1e5a8a');
   ctx.fillStyle = grad;
   ctx.fillRect(0, 0, W, 100);
 
-  // Gold accent line
   ctx.fillStyle = '#d4a353';
   ctx.fillRect(0, 100, W, 4);
 
-  // Business name
   ctx.fillStyle = '#ffffff';
   ctx.textAlign = 'center';
   ctx.font = 'bold 30px "Segoe UI", Roboto, Arial, sans-serif';
@@ -1084,7 +1693,6 @@ async function buildBillImageBlob(roomId) {
   ctx.font = '11px "Segoe UI", Roboto, Arial, sans-serif';
   ctx.fillText('TAX INVOICE', W / 2, 86);
 
-  // ─── Room info block ───
   let y = 140;
   ctx.textAlign = 'left';
   ctx.fillStyle = '#133b5c';
@@ -1111,20 +1719,17 @@ async function buildBillImageBlob(roomId) {
     ctx.fillText('Phone: ' + cust.phone, PAD, y);
   }
 
-  // ─── Logo (top right) ───
   try {
     const logoImg = await loadImage(APP_LOGO);
     ctx.drawImage(logoImg, W - PAD - 90, 130, 90, 90);
   } catch (e) { /* ignore */ }
 
-  // ─── Divider ───
   y = 260;
   ctx.strokeStyle = '#133b5c';
   ctx.lineWidth = 2;
   ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
   y += 24;
 
-  // ─── Column headers (shared) ───
   const drawColHeader = () => {
     ctx.fillStyle = '#64748b';
     ctx.font = 'bold 11px "Segoe UI", Roboto, Arial, sans-serif';
@@ -1139,9 +1744,7 @@ async function buildBillImageBlob(roomId) {
     y += 20;
   };
 
-  // ─── Categories ───
   groups.forEach((g, gi) => {
-    // Category header band
     ctx.fillStyle = '#eef2f7';
     ctx.fillRect(PAD, y - 22, W - 2 * PAD, 32);
     ctx.fillStyle = '#133b5c';
@@ -1165,7 +1768,6 @@ async function buildBillImageBlob(roomId) {
       y += 20;
     }
 
-    // Items
     g.items.forEach(o => {
       const lineTotal = o.price * o.quantity;
       ctx.fillStyle = '#1e293b';
@@ -1177,7 +1779,6 @@ async function buildBillImageBlob(roomId) {
       y += LINE;
     });
 
-    // Subtotal
     ctx.strokeStyle = '#133b5c';
     ctx.lineWidth = 1;
     ctx.beginPath(); ctx.moveTo(PAD, y - 12); ctx.lineTo(W - PAD, y - 12); ctx.stroke();
@@ -1188,7 +1789,6 @@ async function buildBillImageBlob(roomId) {
     y += SUBTOTAL_H + GAP;
   });
 
-  // ─── Grand totals block ───
   y += 10;
   ctx.strokeStyle = '#133b5c';
   ctx.lineWidth = 2;
@@ -1219,7 +1819,6 @@ async function buildBillImageBlob(roomId) {
     y += 24;
   }
 
-  // TOTAL band
   const bandX = totalLabelX - 20;
   const bandY = y + 4;
   const bandW = totalValX - bandX + 20;
@@ -1240,7 +1839,6 @@ async function buildBillImageBlob(roomId) {
 
   y = bandY + bandH + 40;
 
-  // ─── Footer ───
   ctx.strokeStyle = '#e2e8f0';
   ctx.beginPath(); ctx.moveTo(PAD, y); ctx.lineTo(W - PAD, y); ctx.stroke();
   y += 24;
@@ -1253,7 +1851,6 @@ async function buildBillImageBlob(roomId) {
   ctx.font = '11px "Segoe UI", Roboto, Arial, sans-serif';
   ctx.fillText(db.settings.businessName || BUSINESS_NAME, W / 2, y);
 
-  // ─── Convert to PNG blob ───
   return new Promise(resolve => {
     canvas.toBlob(blob => resolve(blob), 'image/png', 0.95);
   });
@@ -1334,7 +1931,27 @@ function settleBill(roomId) {
   const orders = db.orders.filter(o => o.roomId === roomId && !o.paid);
   if (!orders.length) return;
   const now = Date.now();
-  orders.forEach(o => { o.paid = true; o.paidAt = now; });
+
+  // Snapshot before deleting so settled-bill PDFs keep the info
+  const cust = db.customers[roomId] || null;
+  const bill = computeBill(room, orders);
+
+  orders.forEach(o => {
+    o.paid = true;
+    o.paidAt = now;
+    o.roomName = room.name;
+    o.customerSnapshot = cust ? JSON.parse(JSON.stringify(cust)) : null;
+    o.billSnapshot = {
+      subtotal: bill.subtotal,
+      discountAmount: bill.discountAmount,
+      taxAmount: bill.taxAmount,
+      grandTotal: bill.grandTotal,
+      taxPercent: room.taxPercent,
+      discountValue: room.discountValue,
+      discountIsPercent: room.discountIsPercent
+    };
+  });
+
   room.isOccupied = false;
   room.discountValue = 0;
   delete db.customers[roomId];
@@ -1393,6 +2010,9 @@ function importBackup(ev) {
       db = data;
       db.settings = db.settings || { businessName: BUSINESS_NAME, taxPercent: DEFAULT_TAX_PERCENT };
       db.customers = db.customers || {};
+      if (!Array.isArray(db.catalogue) || db.catalogue.length === 0) {
+        db.catalogue = JSON.parse(JSON.stringify(DEFAULT_CATALOGUE));
+      }
       saveDB(); closeModal(); render(); toast('Backup restored');
     } catch (e) { alert('Invalid backup file: ' + e.message); }
   };
